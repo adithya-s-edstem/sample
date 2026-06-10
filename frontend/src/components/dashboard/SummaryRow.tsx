@@ -3,6 +3,8 @@ import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
 import CategoryDonut from './CategoryDonut'
 import { useMonth } from '../../context/monthContext'
+import { useFilters } from '../../context/filterContext'
+import { buildSummaryQuery } from '../../lib/filters'
 import { useSummary, useSummaryByCategory } from '../../hooks'
 import { expenseCountLabel, formatINR } from '../../lib/money'
 
@@ -20,11 +22,19 @@ import { expenseCountLabel, formatINR } from '../../lib/money'
  * total (lib/money) and a "{count} expenses · {month}" subtitle, matching the
  * dashboard wireframe. P6-2 wires the Category Breakdown card to a real Recharts
  * donut + legend (CategoryDonut) from /summary/by-category.
+ *
+ * P8-2 scopes both cards to the filter bar's selected scope: the date-range
+ * filter (defaulting to the selected month) feeds the summary/by-category
+ * queries via buildSummaryQuery, so changing the date range refines the totals
+ * and donut in lockstep with the list. Per docs/api-contracts.md §3 the summary
+ * endpoints only take a date range, so category/amount/search remain list-only.
  */
 function SummaryRow() {
   const { range, label } = useMonth()
-  const summary = useSummary(range)
-  const byCategory = useSummaryByCategory(range)
+  const { filters } = useFilters()
+  const scope = buildSummaryQuery(filters, range)
+  const summary = useSummary(scope)
+  const byCategory = useSummaryByCategory(scope)
 
   return (
     <div className="grid gap-5 md:grid-cols-[320px_1fr]">
