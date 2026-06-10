@@ -5,13 +5,13 @@ API under `/api`.
 
 Scaffolded in **P0-5** (Vite `react-ts`) with the production libraries:
 
-| Concern        | Library                          |
-| -------------- | -------------------------------- |
-| Styling        | Tailwind CSS v4 (`@tailwindcss/vite`) |
-| Charts         | Recharts                         |
-| Server state   | TanStack Query (`@tanstack/react-query`) |
-| HTTP           | axios                            |
-| Dates          | date-fns                         |
+| Concern      | Library                                  |
+| ------------ | ---------------------------------------- |
+| Styling      | Tailwind CSS v4 (`@tailwindcss/vite`)    |
+| Charts       | Recharts                                 |
+| Server state | TanStack Query (`@tanstack/react-query`) |
+| HTTP         | axios                                    |
+| Dates        | date-fns                                 |
 
 The dev proxy (`/api` → backend) is added in **P0-6**; the app shell/theme and
 data hooks are built from **Phase 5**.

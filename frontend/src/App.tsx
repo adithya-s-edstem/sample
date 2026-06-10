@@ -7,8 +7,7 @@ function App() {
       <div className="mx-auto max-w-3xl px-6 py-16">
         <h1 className="text-3xl font-semibold tracking-tight">Expense Tracker</h1>
         <p className="mt-2 text-slate-600">
-          Frontend scaffold ready (Vite + React + TS + Tailwind). UI is built out
-          from Phase 5.
+          Frontend scaffold ready (Vite + React + TS + Tailwind). UI is built out from Phase 5.
         </p>
       </div>
     </main>
