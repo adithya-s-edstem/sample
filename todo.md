@@ -115,8 +115,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 9 — Polish, Testing & Hardening
 
 - [x] **P9-1** Responsive/visual polish vs. wireframes; accessibility pass (labels, focus, contrast) — Owner: Adithya
-- [ ] **P9-2** Frontend component tests (Vitest + Testing Library) complete for form, list, charts, filters
-- [ ] **P9-3** Formatting util tests: INR display, date formatting/grouping
+- [x] **P9-2** Frontend component tests (Vitest + Testing Library) complete for form, list, charts, filters — Owner: Adithya
+- [x] **P9-3** Formatting util tests: INR display, date formatting/grouping — Owner: Adithya
 - [ ] **P9-4** Playwright E2E for key flows: add → dashboard updates; edit; delete + confirm; filter & search; month navigation + empty state; export CSV; loading/error + retry
 - [ ] **P9-5** Money/decimal precision suite (explicit): storage round-trip, aggregation/percentages, `0.01` accepted / `0` & negative rejected, CSV 2-decimal, FE display
 - [ ] **P9-6** CI gates green: backend `mvnw verify` (unit + integration + JaCoCo); frontend `vitest run --coverage` + lint; Playwright suite.
