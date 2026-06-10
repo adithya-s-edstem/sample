@@ -1,6 +1,7 @@
 import Card from '../layout/Card'
 import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
+import CategoryDonut from './CategoryDonut'
 import { useMonth } from '../../context/monthContext'
 import { useSummary, useSummaryByCategory } from '../../hooks'
 import { expenseCountLabel, formatINR } from '../../lib/money'
@@ -17,8 +18,8 @@ import { expenseCountLabel, formatINR } from '../../lib/money'
  *
  * P6-1 wires the "This Month" card to real /summary data: the formatted INR
  * total (lib/money) and a "{count} expenses · {month}" subtitle, matching the
- * dashboard wireframe. The Category Breakdown donut/legend (P6-2) is still a
- * placeholder.
+ * dashboard wireframe. P6-2 wires the Category Breakdown card to a real Recharts
+ * donut + legend (CategoryDonut) from /summary/by-category.
  */
 function SummaryRow() {
   const { range, label } = useMonth()
@@ -65,10 +66,7 @@ function SummaryRow() {
         ) : byCategory.isError ? (
           <ErrorState error={byCategory.error} onRetry={() => void byCategory.refetch()} />
         ) : (
-          <div className="flex items-center gap-7">
-            <div className="size-[150px] shrink-0 rounded-full border-[26px] border-line" />
-            <p className="text-sm text-muted">Category donut and legend (Phase 6)</p>
-          </div>
+          <CategoryDonut data={byCategory.data} />
         )}
       </Card>
     </div>
