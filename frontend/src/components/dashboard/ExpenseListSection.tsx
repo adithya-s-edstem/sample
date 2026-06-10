@@ -1,11 +1,19 @@
 import Card from '../layout/Card'
+import { useMonth } from '../../context/monthContext'
+import { useExpenses } from '../../hooks'
 
 /*
  * Expense list shell: section header with an Export CSV action and the table
- * header matching the wireframe. Rows, actions, and the empty state are wired
- * to live data in Phase 7 (P7-1); CSV export hooks up in P8-3.
+ * header matching the wireframe. P5-3 scopes the list query to the selected month
+ * (the `from`/`to` range from useMonth feeds the hook). Rows, actions, and the
+ * empty state are rendered from this data in Phase 7 (P7-1); CSV export hooks up
+ * in P8-3.
  */
 function ExpenseListSection() {
+  const { range } = useMonth()
+  // Query scoped to the selected month; row rendering lands in P7-1.
+  useExpenses(range)
+
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between">
