@@ -86,8 +86,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P6-2** Category donut (Recharts) from `/summary/by-category` + legend — Owner: Adithya
 - [x] **P6-3** Spending trend (Recharts bar/line) from `/summary/trend` — Owner: Adithya
 - [x] **P6-4** Empty state (no expenses) per `docs/wireframes/empty.html` — Owner: Adithya
-- [ ] **P6-5** Component tests: charts render summary data + empty/zero state
-- [ ] **Exit:** dashboard renders real data and matches the dashboard wireframe
+- [x] **P6-5** Component tests: charts render summary data + empty/zero state — Owner: Adithya
+- [x] **Exit:** dashboard renders real data and matches the dashboard wireframe
 
 ---
 
