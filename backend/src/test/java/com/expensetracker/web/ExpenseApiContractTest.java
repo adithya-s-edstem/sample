@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.expensetracker.TestcontainersConfiguration;
 import com.expensetracker.repository.ExpenseRepository;
-import com.expensetracker.web.dto.ExpenseResponse;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
@@ -61,6 +61,11 @@ class ExpenseApiContractTest {
 
     @Autowired
     private ExpenseRepository repository;
+
+    // Parses JSON numbers as BigDecimal (not double) so money assertions read the
+    // exact value on the wire rather than a lossy re-parse.
+    private final ObjectMapper bigDecimalMapper =
+            new ObjectMapper().enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
 
     @BeforeEach
     void clean() {
@@ -248,7 +253,11 @@ class ExpenseApiContractTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody("10.00", "\"2026-06-10\"", "\"FOOD\"")))
                 .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.timestamp", matchesPattern(ISO_UTC_INSTANT)))
                 .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                // Pin path for the PUT verb too — the not-found URI is echoed back.
+                .andExpect(jsonPath("$.path").value("/api/expenses/" + missing))
                 .andExpect(jsonPath("$.fieldErrors", hasSize(0)));
     }
 
@@ -302,12 +311,11 @@ class ExpenseApiContractTest {
         UUID id = createExpense("9999999999.99", "2026-06-10", "RENT");
 
         MvcResult result = mockMvc.perform(get("/api/expenses/{id}", id)).andReturn();
-        // Deserialize back through the typed contract DTO (BigDecimal amount) so
-        // the assertion reflects the exact value the client reconstructs — no
-        // float drift — rather than Jackson's textual rendering of the number.
-        ExpenseResponse parsed =
-                objectMapper.readValue(result.getResponse().getContentAsString(), ExpenseResponse.class);
-        assertThat(parsed.amount()).isEqualByComparingTo("9999999999.99");
+        // Read the raw JSON number as BigDecimal (no intermediate double) so the
+        // assertion reflects the exact value on the wire and would catch real
+        // float drift — not a value that merely survives a lossy double re-parse.
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("amount").decimalValue()).isEqualByComparingTo("9999999999.99");
     }
 
     // --- GET /api/categories --------------------------------------------------
