@@ -28,7 +28,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 
 - [x] **P1-1** `Category` enum: `FOOD, TRANSPORT, RENT, UTILITIES, GROCERIES, ENTERTAINMENT, HEALTH, SHOPPING, OTHER`
 - [ ] **P1-2** `Expense` JPA entity: UUID id, `BigDecimal` amount (`NUMERIC(12,2)`), `LocalDate` date, category, created/updated timestamps
-- [ ] **P1-3** Flyway `V1__init.sql`: `expenses` table + indexes on `date` and `category`
+- [x] **P1-3** Flyway `V1__init.sql`: `expenses` table + indexes on `date` and `category`
 - [ ] **P1-4** `ExpenseRepository` (Spring Data JPA) with derived/custom filter queries
 - [ ] **P1-5** Repository integration tests with Testcontainers (real Postgres)
 - [ ] **Exit:** entity persists and queries pass against real Postgres in tests
