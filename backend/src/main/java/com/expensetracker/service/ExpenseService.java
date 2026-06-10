@@ -3,7 +3,10 @@ package com.expensetracker.service;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.ExpenseSpecifications;
+import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
+import com.expensetracker.web.dto.CategorySummaryResponse;
+import com.expensetracker.web.dto.CategorySummaryResponse.CategoryShare;
 import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
@@ -14,6 +17,7 @@ import com.expensetracker.web.mapper.ExpenseMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
@@ -93,6 +97,55 @@ public class ExpenseService {
         SummaryProjection projection = repository.summarize(from, to);
         BigDecimal total = projection.getTotal().setScale(2, RoundingMode.UNNECESSARY);
         return SummaryResponse.of(from, to, total, projection.getCount());
+    }
+
+    /**
+     * Per-category breakdown (total, count, percent share) for a period
+     * ({@code GET /api/summary/by-category}).
+     *
+     * <p>Resolves the date range via {@link SummaryQuery} (current month when
+     * {@code from}/{@code to} are omitted) and aggregates server-side, one row per
+     * category that has spend in range (largest-first; empty categories omitted).
+     * The grand {@code total} and each slice {@code total} are normalized to the
+     * money scale (scale 2). Each {@code percent} is the slice's share of the grand
+     * total, computed from the exact {@code BigDecimal} totals and rounded
+     * half-up to two decimals; an empty period yields {@code total = 0.00} and an
+     * empty list (no division by zero).
+     */
+    @Transactional(readOnly = true)
+    public CategorySummaryResponse summaryByCategory(SummaryQuery query) {
+        LocalDate today = LocalDate.now();
+        LocalDate from = query.resolvedFrom(today);
+        LocalDate to = query.resolvedTo(today);
+
+        List<CategorySummaryProjection> rows = repository.summarizeByCategory(from, to);
+        BigDecimal total = rows.stream()
+                .map(CategorySummaryProjection::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.UNNECESSARY);
+
+        List<CategoryShare> categories = rows.stream()
+                .map(row -> new CategoryShare(
+                        row.getCategory(),
+                        row.getTotal().setScale(2, RoundingMode.UNNECESSARY),
+                        row.getCount(),
+                        percentOf(row.getTotal(), total)))
+                .toList();
+
+        return new CategorySummaryResponse(from, to, total, categories);
+    }
+
+    /**
+     * A category total's share of the grand total, as a percentage rounded half-up
+     * to two decimals. Returns {@code 0.00} when the grand total is zero (only
+     * possible for an empty period, where there are no slices anyway), avoiding a
+     * divide-by-zero.
+     */
+    private static BigDecimal percentOf(BigDecimal part, BigDecimal total) {
+        if (total.signum() == 0) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.UNNECESSARY);
+        }
+        return part.multiply(BigDecimal.valueOf(100)).divide(total, 2, RoundingMode.HALF_UP);
     }
 
     /** Full-replace update of an existing expense; throws if the id is unknown. */

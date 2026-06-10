@@ -1,6 +1,7 @@
 package com.expensetracker.web;
 
 import com.expensetracker.service.ExpenseService;
+import com.expensetracker.web.dto.CategorySummaryResponse;
 import com.expensetracker.web.dto.SummaryQuery;
 import com.expensetracker.web.dto.SummaryResponse;
 import java.time.LocalDate;
@@ -16,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <ul>
  *   <li>{@code GET /api/summary} → headline {@link SummaryResponse} (total + count)
+ *   <li>{@code GET /api/summary/by-category} → {@link CategorySummaryResponse}
+ *       (per-category totals + percent share, for the donut)
  * </ul>
  *
- * <p>This controller is introduced for P3-2; {@code /summary/by-category} (P3-3)
- * and {@code /summary/trend} (P3-4) land here next.
+ * <p>This controller is introduced for P3-2 ({@code /summary}); P3-3 adds
+ * {@code /summary/by-category}. {@code /summary/trend} (P3-4) lands here next.
  *
  * <p>Thin layer over {@link ExpenseService}. Both range params are optional and
  * default to the current calendar month (resolved in {@link SummaryQuery}); a
@@ -41,5 +44,12 @@ public class SummaryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return service.summary(new SummaryQuery(from, to));
+    }
+
+    @GetMapping("/by-category")
+    public CategorySummaryResponse byCategory(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return service.summaryByCategory(new SummaryQuery(from, to));
     }
 }
