@@ -1,18 +1,31 @@
 # backend — Expense Tracker API
 
-Spring Boot 3.x REST API (Java 21) backing the Expense Tracker.
+Spring Boot 3.5.x REST API (Java 21) backing the Expense Tracker.
 
-> **Status: placeholder.** This directory is the monorepo slot for the backend
-> created in **P0-1**. The Spring Boot project itself is scaffolded in **P0-3**
-> (Spring Initializr: Web, Data JPA, Validation, PostgreSQL driver, Flyway,
-> Testcontainers), with `application.yml` wired in **P0-4**.
+Scaffolded in **P0-3** via Spring Initializr with: Spring Web, Spring Data JPA,
+Validation, PostgreSQL driver, Flyway, and Testcontainers. Datasource / JPA /
+Flyway configuration (`application.yml`) is wired in **P0-4**; the data model and
+migrations land in Phase 1.
 
-See [`../docs/implementation-plan.md`](../docs/implementation-plan.md) for the
-phased build plan and [`../docs/technical-architecture.md`](../docs/technical-architecture.md)
-for the binding stack decision and DB schema.
+## Prerequisites
 
-## Intended commands (once scaffolded)
+- JDK 21
+- A running PostgreSQL (use the repo-root `docker compose up -d`) for
+  `spring-boot:run`. Tests spin up their own Postgres via Testcontainers
+  (Docker required).
 
-- `./mvnw spring-boot:run` — run the API locally
-- `./mvnw clean package` — build
-- `./mvnw verify` — unit + integration + JaCoCo
+## Commands
+
+- `./mvnw spring-boot:run` — run the API locally (needs the DB up + `application.yml` from P0-4)
+- `./mvnw clean package` — build a runnable jar
+- `./mvnw verify` — unit + integration tests (Testcontainers Postgres) + JaCoCo
+- `./mvnw test` — faster inner-loop unit tests
+
+## Layout
+
+- `src/main/java/com/expensetracker` — application code (package `com.expensetracker`)
+- `src/main/resources/db/migration` — Flyway SQL migrations (`V1__init.sql` in P1-3)
+- `src/test/java/com/expensetracker` — tests, incl. `TestcontainersConfiguration`
+
+See [`../docs/implementation-plan.md`](../docs/implementation-plan.md) and
+[`../docs/technical-architecture.md`](../docs/technical-architecture.md).
