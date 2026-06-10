@@ -63,4 +63,21 @@ describe('CategoryDonut (P6-2)', () => {
     expect(screen.getByText('No spending this month.')).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
+
+  it('renders the donut + legend (not the empty message) for a zero-total category', () => {
+    // Zero state vs. empty state: a category is present in the breakdown but its
+    // total/percent are zero. The donut + legend still render (the empty message
+    // is reserved for `categories: []`); the legend shows a clean ₹0 · 0%.
+    const zero: CategorySummaryResponse = {
+      from: '2026-06-01',
+      to: '2026-06-30',
+      total: 0,
+      categories: [{ category: 'FOOD', total: 0, count: 0, percent: 0 }],
+    }
+    render(<CategoryDonut data={zero} />)
+    expect(screen.getByRole('img', { name: 'Spending by category' })).toBeInTheDocument()
+    expect(screen.queryByText('No spending this month.')).not.toBeInTheDocument()
+    expect(screen.getByText('Food')).toBeInTheDocument()
+    expect(screen.getByText('₹0 · 0%')).toBeInTheDocument()
+  })
 })
