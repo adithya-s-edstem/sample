@@ -562,6 +562,134 @@ class ExpenseApiContractTest {
         assertThat(body.get("total").decimalValue()).isEqualByComparingTo("9999999999.99");
     }
 
+    // --- GET /api/summary/by-category (per-category totals + percent) --------
+
+    @Test
+    void byCategoryReturnsContractBodyShapeWithExactlyTheContractFields() throws Exception {
+        createExpense("12000.00", "2026-06-05", "RENT");
+        createExpense("3000.00", "2026-06-06", "FOOD");
+        createExpense("1500.00", "2026-06-07", "FOOD");
+
+        MvcResult result = mockMvc.perform(get("/api/summary/by-category")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.from").value("2026-06-01"))
+                .andExpect(jsonPath("$.to").value("2026-06-30"))
+                .andExpect(jsonPath("$.total").value(16500.00))
+                // Largest-first: RENT 12000 before FOOD 4500.
+                .andExpect(jsonPath("$.categories", hasSize(2)))
+                .andExpect(jsonPath("$.categories[0].category").value("RENT"))
+                .andExpect(jsonPath("$.categories[0].total").value(12000.00))
+                .andExpect(jsonPath("$.categories[0].count").value(1))
+                .andExpect(jsonPath("$.categories[1].category").value("FOOD"))
+                .andExpect(jsonPath("$.categories[1].total").value(4500.00))
+                .andExpect(jsonPath("$.categories[1].count").value(2))
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.fieldNames()).toIterable().containsExactlyInAnyOrder("from", "to", "total", "categories");
+        JsonNode slice = body.get("categories").get(0);
+        assertThat(slice.fieldNames()).toIterable().containsExactlyInAnyOrder("category", "total", "count", "percent");
+    }
+
+    @Test
+    void byCategoryDefaultsToCurrentMonth() throws Exception {
+        java.time.YearMonth thisMonth = java.time.YearMonth.now();
+        // Two rows in the current month, one outside; with no from/to the
+        // breakdown must aggregate the current month only.
+        createExpense("100.00", thisMonth.atDay(1).toString(), "FOOD");
+        createExpense("250.00", thisMonth.atEndOfMonth().toString(), "RENT");
+        createExpense("999.00", thisMonth.minusMonths(1).atDay(15).toString(), "OTHER");
+
+        mockMvc.perform(get("/api/summary/by-category"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.from").value(thisMonth.atDay(1).toString()))
+                .andExpect(jsonPath("$.to").value(thisMonth.atEndOfMonth().toString()))
+                .andExpect(jsonPath("$.total").value(350.00))
+                .andExpect(jsonPath("$.categories", hasSize(2)));
+    }
+
+    @Test
+    void byCategoryReturnsEmptyBreakdownForEmptyPeriod() throws Exception {
+        // No rows in range → total 0.00, empty categories list (not null / not an error).
+        mockMvc.perform(get("/api/summary/by-category")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0.00))
+                .andExpect(jsonPath("$.categories", hasSize(0)));
+    }
+
+    @Test
+    void byCategorySingleCategoryIsHundredPercent() throws Exception {
+        createExpense("500.00", "2026-06-10", "GROCERIES");
+        createExpense("700.00", "2026-06-12", "GROCERIES");
+
+        mockMvc.perform(get("/api/summary/by-category")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.categories", hasSize(1)))
+                .andExpect(jsonPath("$.categories[0].category").value("GROCERIES"))
+                .andExpect(jsonPath("$.categories[0].total").value(1200.00))
+                .andExpect(jsonPath("$.categories[0].percent").value(100.00));
+    }
+
+    @Test
+    void byCategoryReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/summary/by-category").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    // --- by-category money / decimal precision -------------------------------
+
+    @Test
+    void byCategoryPercentsAreComputedFromExactTotalsAndSumToHundred() throws Exception {
+        // 12000 / 5200 / 3300 over a 20500 total — the contract's worked example
+        // rounds to 58.54 / 25.37 / 16.10, which sum to ~100 (documented HALF_UP).
+        createExpense("12000.00", "2026-06-05", "RENT");
+        createExpense("5200.00", "2026-06-06", "GROCERIES");
+        createExpense("3300.00", "2026-06-07", "FOOD");
+
+        MvcResult result = mockMvc.perform(get("/api/summary/by-category")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+
+        assertThat(body.get("total").decimalValue()).isEqualByComparingTo("20500.00");
+        JsonNode cats = body.get("categories");
+        assertThat(cats.get(0).get("percent").decimalValue()).isEqualByComparingTo("58.54");
+        assertThat(cats.get(1).get("percent").decimalValue()).isEqualByComparingTo("25.37");
+        assertThat(cats.get(2).get("percent").decimalValue()).isEqualByComparingTo("16.10");
+        // The slice totals sum exactly to the grand total (no float drift).
+        java.math.BigDecimal sliceSum = java.math.BigDecimal.ZERO;
+        for (JsonNode c : cats) {
+            sliceSum = sliceSum.add(c.get("total").decimalValue());
+        }
+        assertThat(sliceSum).isEqualByComparingTo("20500.00");
+    }
+
+    @Test
+    void byCategoryTotalsSumManySmallAmountsExactlyWithoutFloatDrift() throws Exception {
+        // 0.10 + 0.20 within one category must aggregate to exactly 0.30.
+        createExpense("0.10", "2026-06-10", "OTHER");
+        createExpense("0.20", "2026-06-11", "OTHER");
+
+        MvcResult result = mockMvc.perform(get("/api/summary/by-category")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("total").decimalValue()).isEqualByComparingTo("0.30");
+        assertThat(body.get("categories").get(0).get("total").decimalValue()).isEqualByComparingTo("0.30");
+    }
+
     // --- GET /api/categories --------------------------------------------------
 
     @Test

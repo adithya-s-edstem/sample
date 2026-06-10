@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.expensetracker.TestcontainersConfiguration;
 import com.expensetracker.domain.Category;
 import com.expensetracker.domain.Expense;
+import com.expensetracker.repository.projection.CategorySummaryProjection;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -201,5 +202,46 @@ class ExpenseRepositoryIntegrationTest {
         // Three June rows, page size 2 → second page holds the trailing row.
         assertThat(page.getTotalElements()).isEqualTo(3);
         assertThat(page.getContent()).containsExactly(jun30Transport001);
+    }
+
+    // --- summarizeByCategory (GET /api/summary/by-category) -------------------
+
+    @Test
+    void summarizeByCategoryGroupsAndOrdersByDescendingTotal() {
+        // June range: GROCERIES 50.00 (1), FOOD 200.00 (1), TRANSPORT 0.01 (1).
+        // May FOOD 100 and July RENT 1500 are out of range and excluded.
+        List<CategorySummaryProjection> rows =
+                repository.summarizeByCategory(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+
+        assertThat(rows).hasSize(3);
+        // Largest-first by total.
+        assertThat(rows.get(0).getCategory()).isEqualTo(Category.FOOD);
+        assertThat(rows.get(0).getTotal()).isEqualByComparingTo("200.00");
+        assertThat(rows.get(0).getCount()).isEqualTo(1L);
+        assertThat(rows.get(1).getCategory()).isEqualTo(Category.GROCERIES);
+        assertThat(rows.get(1).getTotal()).isEqualByComparingTo("50.00");
+        assertThat(rows.get(2).getCategory()).isEqualTo(Category.TRANSPORT);
+        assertThat(rows.get(2).getTotal()).isEqualByComparingTo("0.01");
+    }
+
+    @Test
+    void summarizeByCategorySumsMultipleRowsPerCategoryExactly() {
+        // Across the full span, FOOD has two rows (100.00 + 200.00) that must
+        // aggregate to exactly 300.00 with count 2.
+        List<CategorySummaryProjection> rows =
+                repository.summarizeByCategory(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+        CategorySummaryProjection food = rows.stream()
+                .filter(r -> r.getCategory() == Category.FOOD)
+                .findFirst()
+                .orElseThrow();
+        assertThat(food.getTotal()).isEqualByComparingTo("300.00");
+        assertThat(food.getCount()).isEqualTo(2L);
+    }
+
+    @Test
+    void summarizeByCategoryReturnsEmptyForRangeWithNoRows() {
+        assertThat(repository.summarizeByCategory(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31)))
+                .isEmpty();
     }
 }
