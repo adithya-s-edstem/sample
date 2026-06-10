@@ -1,7 +1,9 @@
 package com.expensetracker.web.error;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -58,6 +60,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.path").value("/api/expenses"))
+                .andExpect(jsonPath("$.message").value("amount must be greater than 0"))
                 .andExpect(jsonPath("$.fieldErrors", hasSize(1)))
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("amount"))
                 .andExpect(jsonPath("$.fieldErrors[0].message").value("must be greater than 0"));
@@ -98,7 +101,8 @@ class GlobalExceptionHandlerTest {
                         .content(body("null", "null", "null")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors", hasSize(3)))
-                .andExpect(jsonPath("$.fieldErrors[*].field", containsInAnyOrder("amount", "date", "category")));
+                .andExpect(jsonPath("$.fieldErrors[*].field", containsInAnyOrder("amount", "date", "category")))
+                .andExpect(jsonPath("$.fieldErrors[*].message", everyItem(is("must not be null"))));
     }
 
     @Test
