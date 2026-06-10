@@ -68,7 +68,8 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.amount").value(1200.00))
                 .andExpect(jsonPath("$.date").value("2026-06-10"))
                 .andExpect(jsonPath("$.category").value("GROCERIES"))
-                .andExpect(jsonPath("$.createdAt").value("2026-06-10T09:15:30Z"));
+                .andExpect(jsonPath("$.createdAt").value("2026-06-10T09:15:30Z"))
+                .andExpect(jsonPath("$.updatedAt").value("2026-06-10T09:15:30Z"));
 
         ArgumentCaptor<ExpenseRequest> captor = ArgumentCaptor.forClass(ExpenseRequest.class);
         verify(service).create(captor.capture());
@@ -86,6 +87,7 @@ class ExpenseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(ID.toString()))
                 .andExpect(jsonPath("$.amount").value(50.00))
+                .andExpect(jsonPath("$.date").value("2026-06-01"))
                 .andExpect(jsonPath("$.category").value("FOOD"));
     }
 
@@ -98,7 +100,9 @@ class ExpenseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\":250.50,\"date\":\"2026-06-02\",\"category\":\"HEALTH\"}"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ID.toString()))
                 .andExpect(jsonPath("$.amount").value(250.50))
+                .andExpect(jsonPath("$.date").value("2026-06-02"))
                 .andExpect(jsonPath("$.category").value("HEALTH"));
 
         ArgumentCaptor<ExpenseRequest> captor = ArgumentCaptor.forClass(ExpenseRequest.class);
