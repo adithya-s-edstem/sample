@@ -27,8 +27,9 @@ import org.springframework.context.annotation.Import;
  * <p>Guards the testing-plan §6 invariant — {@code NUMERIC(12,2)} / {@link
  * BigDecimal} aggregation must never drift through a float. It checks the classic
  * float-trap sums ({@code 0.10 + 0.20 = 0.30}), many-small-amount accumulation,
- * high-value totals near the {@code NUMERIC(12,2)} ceiling, and that every sum
- * comes back at the money scale (2) so it serializes as {@code N.NN}. The
+ * high-value totals with a fractional carry within the {@code NUMERIC(12,2)}
+ * range, and that every sum comes back at the money scale (2) so it serializes
+ * as {@code N.NN}. The
  * percent-share rounding rule lives in the service, so it is covered by the
  * service unit test; here we only pin that the raw category/grand totals the
  * service divides are themselves exact.
@@ -86,9 +87,10 @@ class SummaryPrecisionIntegrationTest {
     }
 
     @Test
-    void summarizeHandlesHighValueTotalsNearTheNumericCeiling() {
-        // NUMERIC(12,2) holds up to 9_999_999_999.99. Two large rows must sum
-        // exactly without overflow or rounding.
+    void summarizeHandlesHighValueTotalsWithFractionalCarry() {
+        // A large fractional carry well within the NUMERIC(12,2) range (ceiling
+        // 9_999_999_999.99): 9999999.99 + 0.01 must roll over to exactly
+        // 10000000.00 without overflow or rounding.
         save("9999999.99", LocalDate.of(2026, 6, 1), Category.RENT);
         save("0.01", LocalDate.of(2026, 6, 2), Category.RENT);
         repository.flush();
