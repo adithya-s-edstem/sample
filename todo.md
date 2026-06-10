@@ -105,7 +105,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 8 — Filters, Search & CSV Download
 
 - [x] **P8-1** Filter bar: date range, category, amount range, search — bound to list query params — Owner: Adithya
-- [ ] **P8-2** Filters also drive charts/summary for the selected scope
+- [x] **P8-2** Filters also drive charts/summary for the selected scope — Owner: Adithya
 - [ ] **P8-3** Export CSV button hitting the export endpoint with current filters
 - [ ] **P8-4** Component tests: changing filters updates query params
 - [ ] **Exit:** filtering/search refine list + charts; CSV downloads the filtered set
