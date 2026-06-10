@@ -1,18 +1,39 @@
 # frontend — Expense Tracker SPA
 
-React SPA (Vite + TypeScript + Tailwind + Recharts + TanStack Query) for the
-Expense Tracker. Talks only to the backend API under `/api`.
+React SPA (Vite + TypeScript) for the Expense Tracker. Talks only to the backend
+API under `/api`.
 
-> **Status: placeholder.** This directory is the monorepo slot for the frontend
-> created in **P0-1**. The Vite project itself is scaffolded in **P0-5**
-> (React + TS, plus Tailwind, Recharts, TanStack Query, axios, date-fns), with
-> the dev proxy `/api` → backend wired in **P0-6**.
+Scaffolded in **P0-5** (Vite `react-ts`) with the production libraries:
 
-See [`../docs/implementation-plan.md`](../docs/implementation-plan.md) for the
-phased build plan and [`../docs/solution.md`](../docs/solution.md) for the UX/layout.
+| Concern        | Library                          |
+| -------------- | -------------------------------- |
+| Styling        | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| Charts         | Recharts                         |
+| Server state   | TanStack Query (`@tanstack/react-query`) |
+| HTTP           | axios                            |
+| Dates          | date-fns                         |
 
-## Intended commands (once scaffolded)
+The dev proxy (`/api` → backend) is added in **P0-6**; the app shell/theme and
+data hooks are built from **Phase 5**.
 
-- `npm run dev` — Vite dev server (proxies `/api` to the backend)
-- `npm run build` — production build
-- `npm run test` — Vitest
+## Prerequisites
+
+- Node 20+ / npm 10+
+
+## Commands
+
+- `npm install` — install dependencies
+- `npm run dev` — Vite dev server (will proxy `/api` to the backend after P0-6)
+- `npm run build` — type-check + production build to `dist/`
+- `npm run preview` — preview the production build
+- `npm run lint` — ESLint
+
+## Layout
+
+- `src/main.tsx` — entry; wires the TanStack Query `QueryClientProvider`
+- `src/App.tsx` — placeholder shell (replaced in P5-1)
+- `src/index.css` — imports Tailwind (`@import 'tailwindcss';`)
+- `vite.config.ts` — React + Tailwind plugins
+
+See [`../docs/solution.md`](../docs/solution.md) for the UX/layout and
+[`../docs/wireframes.md`](../docs/wireframes.md) for the mockups.
