@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -16,6 +17,20 @@ export default defineConfig({
         target: apiTarget,
         changeOrigin: true,
       },
+    },
+  },
+  // Vitest runs hook/component tests in a jsdom environment with Testing Library
+  // matchers preloaded from src/test/setup.ts. The API is mocked with MSW, so
+  // tests never touch the real backend.
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    pool: 'threads',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
     },
   },
 })
