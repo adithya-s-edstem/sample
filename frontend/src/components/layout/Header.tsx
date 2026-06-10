@@ -4,9 +4,15 @@ import { useMonth } from '../../context/monthContext'
  * App header: title, month selector, and the primary "Add Expense" action.
  * The month selector (P5-3) reads/mutates the shared month state: prev/next
  * step the month and the label shows the selected month; this scope feeds the
- * summary, trend, and list queries below. Add opens the modal in P7.
+ * summary, trend, and list queries below. The Add action opens the add-expense
+ * modal via `onAddExpense` (wired in App, P7-3).
  */
-function Header() {
+type HeaderProps = {
+  /** Opens the add-expense modal. */
+  onAddExpense?: () => void
+}
+
+function Header({ onAddExpense }: HeaderProps) {
   const { label, goToPreviousMonth, goToNextMonth } = useMonth()
 
   const navBtn =
@@ -37,6 +43,7 @@ function Header() {
         </div>
         <button
           type="button"
+          onClick={onAddExpense}
           className="inline-flex cursor-pointer items-center gap-2 rounded-[10px] border-none bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-card"
         >
           <span className="text-base leading-none">+</span> Add Expense
