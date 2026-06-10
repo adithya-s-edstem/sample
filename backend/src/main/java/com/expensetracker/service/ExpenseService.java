@@ -3,11 +3,16 @@ package com.expensetracker.service;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.ExpenseSpecifications;
+import com.expensetracker.repository.projection.SummaryProjection;
 import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
 import com.expensetracker.web.dto.PageResponse;
+import com.expensetracker.web.dto.SummaryQuery;
+import com.expensetracker.web.dto.SummaryResponse;
 import com.expensetracker.web.mapper.ExpenseMapper;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -69,6 +74,25 @@ public class ExpenseService {
         Page<ExpenseResponse> page =
                 repository.findAll(spec, query.toPageRequest()).map(ExpenseMapper::toResponse);
         return PageResponse.of(page, query.resolvedSort());
+    }
+
+    /**
+     * Headline summary (total + count) for a period ({@code GET /api/summary}).
+     *
+     * <p>Resolves the date range via {@link SummaryQuery} (current month when
+     * {@code from}/{@code to} are omitted) and aggregates server-side. The total is
+     * normalized to the money scale ({@code NUMERIC(12,2)} → scale 2) so an empty
+     * period reads {@code 0.00} and the value is exact decimal throughout.
+     */
+    @Transactional(readOnly = true)
+    public SummaryResponse summary(SummaryQuery query) {
+        LocalDate today = LocalDate.now();
+        LocalDate from = query.resolvedFrom(today);
+        LocalDate to = query.resolvedTo(today);
+
+        SummaryProjection projection = repository.summarize(from, to);
+        BigDecimal total = projection.getTotal().setScale(2, RoundingMode.UNNECESSARY);
+        return SummaryResponse.of(from, to, total, projection.getCount());
     }
 
     /** Full-replace update of an existing expense; throws if the id is unknown. */
