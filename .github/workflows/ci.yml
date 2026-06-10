@@ -36,8 +36,9 @@ jobs:
         run: chmod +x ./mvnw
 
       # `verify` runs unit + integration tests (Testcontainers spins up Postgres
-      # via the Docker daemon preinstalled on ubuntu-latest) and the Spotless
-      # format check bound to the verify phase.
+      # via the Docker daemon preinstalled on ubuntu-latest), produces the JaCoCo
+      # coverage report (target/site/jacoco/), and runs the Spotless format check
+      # bound to the verify phase.
       - name: Build and test
         run: ./mvnw --batch-mode --no-transfer-progress verify
 
