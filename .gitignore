@@ -1,10 +1,10 @@
 # ─── Backend (Java / Maven / Spring Boot) ───────────────────────────────
+# Build output only — do NOT blanket-ignore *.jar/*.war: the committed Maven
+# wrapper jar (.mvn/wrapper/maven-wrapper.jar) must stay tracked so ./mvnw works
+# on fresh clones and in CI.
 backend/target/
-backend/.mvn/wrapper/maven-wrapper.jar
 backend/build/
 *.class
-*.jar
-*.war
 hs_err_pid*
 
 # ─── Frontend (Node / Vite / React) ─────────────────────────────────────
