@@ -92,6 +92,15 @@ public record ExpenseQuery(
         return (sort == null || sort.isBlank()) ? DEFAULT_SORT : sort.trim();
     }
 
+    /**
+     * Builds just the {@link Sort} from the resolved sort string, ignoring
+     * page/size. Used by the CSV export ({@code GET /api/expenses/export}, P4-1),
+     * which applies the same filters and ordering as the list but never paginates.
+     */
+    public Sort toSort() {
+        return parseSort(resolvedSort());
+    }
+
     /** Builds the {@link PageRequest} from page/size/sort, applying defaults and the size cap. */
     public PageRequest toPageRequest() {
         int pageIndex = page == null ? 0 : page;
