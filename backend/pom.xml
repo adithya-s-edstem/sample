@@ -84,6 +84,27 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.44.5</version>
+				<configuration>
+					<!-- LF everywhere so spotless:check is platform-independent (matches .gitattributes) -->
+					<lineEndings>UNIX</lineEndings>
+					<java>
+						<palantirJavaFormat/>
+						<removeUnusedImports/>
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<!-- spotless:check binds to the verify phase, so `mvnw verify` enforces formatting -->
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
