@@ -6,6 +6,7 @@ import ExpenseRow from './ExpenseRow'
 import { useMonth } from '../../context/monthContext'
 import { useFilters } from '../../context/filterContext'
 import { buildExpenseQuery } from '../../lib/filters'
+import { exportExpensesUrl } from '../../api/expenses'
 import { useExpenses } from '../../hooks'
 import type { Expense } from '../../api/types'
 
@@ -30,7 +31,14 @@ import type { Expense } from '../../api/types'
  * ExpenseRow (date, category pill, amount, edit/delete actions). P7-3 wires the
  * edit action and the empty-state CTA to the add/edit modal via `onEditExpense` /
  * `onAddExpense` (state lives in App); P7-4 wires each row's delete action to the
- * confirm prompt via `onDeleteExpense`. CSV export (P8-3) follows.
+ * confirm prompt via `onDeleteExpense`.
+ *
+ * P8-3 wires the "Export CSV" action: it builds the export URL from the same
+ * filters that scope the list (buildExpenseQuery → exportExpensesUrl) so the
+ * download reflects exactly what's on screen — the selected month range plus any
+ * date/category/amount/search filters — then triggers a browser download by
+ * clicking a transient anchor with the `download` attribute. Pointing the browser
+ * at the URL lets the backend's `Content-Disposition` header name the file.
  */
 type ExpenseListSectionProps = {
   /** Opens the add-expense modal (header / empty-state CTA share this). */
@@ -50,7 +58,22 @@ function ExpenseListSection({
   const { filters } = useFilters()
   // P8-1: the filter bar folds into the list query — date range (defaulting to
   // the selected month), category, amount range, and search.
-  const expenses = useExpenses(buildExpenseQuery(filters, range))
+  const query = buildExpenseQuery(filters, range)
+  const expenses = useExpenses(query)
+
+  // P8-3: download the CSV for the currently filtered set. The export endpoint
+  // accepts the same filter params as the list, so we reuse `query`. A transient
+  // anchor with `download` triggers the file download and lets the backend's
+  // Content-Disposition header name the file.
+  const handleExport = () => {
+    const link = document.createElement('a')
+    link.href = exportExpensesUrl(query)
+    link.rel = 'noopener'
+    link.download = ''
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
 
   // Successful fetch with no rows for the month → page-level empty prompt.
   if (expenses.isSuccess && expenses.data.content.length === 0) {
@@ -67,6 +90,7 @@ function ExpenseListSection({
         <p className="text-[13px] font-semibold uppercase tracking-[0.04em] text-muted">Expenses</p>
         <button
           type="button"
+          onClick={handleExport}
           className="inline-flex cursor-pointer items-center gap-2 rounded-[10px] border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink shadow-card"
         >
           ⬇ Export CSV

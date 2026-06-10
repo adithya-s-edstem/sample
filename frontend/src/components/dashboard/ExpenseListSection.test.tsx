@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { http, HttpResponse, delay } from 'msw'
 import { screen, waitFor, fireEvent } from '@testing-library/react'
 import ExpenseListSection from './ExpenseListSection'
@@ -146,6 +146,61 @@ describe('ExpenseListSection — empty state (P6-4)', () => {
     renderWithProviders(<ExpenseListSection />, { initialMonth: JUNE_2026 })
     expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.queryByText('No expenses this month')).not.toBeInTheDocument()
+  })
+
+  describe('Export CSV (P8-3)', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('exports the current month range when no extra filters are set', async () => {
+      server.use(http.get('/api/expenses', () => HttpResponse.json(sampleExpensePage)))
+      const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+      renderWithProviders(<ExpenseListSection />, { initialMonth: JUNE_2026 })
+
+      const button = await screen.findByRole('button', { name: /Export CSV/ })
+      fireEvent.click(button)
+
+      expect(clickSpy).toHaveBeenCalledTimes(1)
+      const anchor = clickSpy.mock.instances[0] as HTMLAnchorElement
+      expect(anchor.getAttribute('href')).toBe('/api/expenses/export?from=2026-06-01&to=2026-06-30')
+      expect(anchor.hasAttribute('download')).toBe(true)
+      // The anchor is removed after the click — not left in the DOM.
+      expect(document.querySelector('a[href^="/api/expenses/export"]')).toBeNull()
+    })
+
+    it('folds the active filters into the export URL', async () => {
+      server.use(http.get('/api/expenses', () => HttpResponse.json(sampleExpensePage)))
+      const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+      renderWithProviders(<ExpenseListSection />, {
+        initialMonth: JUNE_2026,
+        initialFilters: {
+          from: '2026-06-05',
+          to: '2026-06-20',
+          category: 'GROCERIES',
+          minAmount: '100',
+          maxAmount: '500',
+          q: 'coffee',
+        },
+      })
+
+      const button = await screen.findByRole('button', { name: /Export CSV/ })
+      fireEvent.click(button)
+
+      const anchor = clickSpy.mock.instances[0] as HTMLAnchorElement
+      const url = new URL(anchor.href, 'http://localhost')
+      expect(url.pathname).toBe('/api/expenses/export')
+      expect(Object.fromEntries(url.searchParams)).toEqual({
+        from: '2026-06-05',
+        to: '2026-06-20',
+        category: 'GROCERIES',
+        minAmount: '100',
+        maxAmount: '500',
+        q: 'coffee',
+      })
+    })
   })
 
   it('shows a graceful error + Retry when /api/expenses fails', async () => {
