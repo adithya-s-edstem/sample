@@ -17,11 +17,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.expensetracker.domain.Category;
 import com.expensetracker.service.ExpenseNotFoundException;
 import com.expensetracker.service.ExpenseService;
+import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.PageResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -79,6 +82,66 @@ class ExpenseControllerTest {
         assertThat(captor.getValue().amount()).isEqualByComparingTo("1200.00");
         assertThat(captor.getValue().date()).isEqualTo(LocalDate.of(2026, 6, 10));
         assertThat(captor.getValue().category()).isEqualTo(Category.GROCERIES);
+    }
+
+    @Test
+    void listReturnsPagedBodyAndDelegatesParsedQuery() throws Exception {
+        ExpenseResponse row = sampleResponse(new BigDecimal("1200.00"), LocalDate.of(2026, 6, 10), Category.GROCERIES);
+        when(service.list(any())).thenReturn(new PageResponse<>(List.of(row), 0, 50, 1L, 1, "date,desc"));
+
+        mockMvc.perform(get("/api/expenses")
+                        .param("category", "GROCERIES")
+                        .param("minAmount", "100")
+                        .param("sort", "amount,asc")
+                        .param("page", "0")
+                        .param("size", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(ID.toString()))
+                .andExpect(jsonPath("$.content[0].amount").value(1200.00))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(50))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.sort").value("date,desc"));
+
+        ArgumentCaptor<ExpenseQuery> captor = ArgumentCaptor.forClass(ExpenseQuery.class);
+        verify(service).list(captor.capture());
+        ExpenseQuery q = captor.getValue();
+        assertThat(q.category()).isEqualTo(Category.GROCERIES);
+        assertThat(q.minAmount()).isEqualByComparingTo("100");
+        assertThat(q.sort()).isEqualTo("amount,asc");
+        assertThat(q.page()).isZero();
+        assertThat(q.size()).isEqualTo(50);
+    }
+
+    @Test
+    void listWithNoParamsDelegatesAllNullQuery() throws Exception {
+        when(service.list(any())).thenReturn(new PageResponse<>(List.of(), 0, 50, 0L, 0, "date,desc"));
+
+        mockMvc.perform(get("/api/expenses")).andExpect(status().isOk());
+
+        ArgumentCaptor<ExpenseQuery> captor = ArgumentCaptor.forClass(ExpenseQuery.class);
+        verify(service).list(captor.capture());
+        ExpenseQuery q = captor.getValue();
+        assertThat(q.from()).isNull();
+        assertThat(q.to()).isNull();
+        assertThat(q.category()).isNull();
+        assertThat(q.sort()).isNull();
+    }
+
+    @Test
+    void listReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void listReturns400ForUnknownCategoryParam() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("category", "NOPE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
