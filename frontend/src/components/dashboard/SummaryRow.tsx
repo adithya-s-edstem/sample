@@ -3,6 +3,7 @@ import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
 import { useMonth } from '../../context/monthContext'
 import { useSummary, useSummaryByCategory } from '../../hooks'
+import { expenseCountLabel, formatINR } from '../../lib/money'
 
 /*
  * Summary row shell: this-month total card + category-breakdown card laid out
@@ -12,12 +13,15 @@ import { useSummary, useSummaryByCategory } from '../../hooks'
  * P5-4 adds the loading/error states: each card independently shows the
  * wireframe skeleton (docs/wireframes/loading.html — sk-amount + sk-line for the
  * total, sk-donut + legend lines for the breakdown) while its query is pending,
- * and a graceful error + Retry on failure. The success rendering (the total
- * value and the donut/legend) lands in Phase 6 (P6-1, P6-2); placeholders remain
- * here.
+ * and a graceful error + Retry on failure.
+ *
+ * P6-1 wires the "This Month" card to real /summary data: the formatted INR
+ * total (lib/money) and a "{count} expenses · {month}" subtitle, matching the
+ * dashboard wireframe. The Category Breakdown donut/legend (P6-2) is still a
+ * placeholder.
  */
 function SummaryRow() {
-  const { range } = useMonth()
+  const { range, label } = useMonth()
   const summary = useSummary(range)
   const byCategory = useSummaryByCategory(range)
 
@@ -33,8 +37,12 @@ function SummaryRow() {
           <ErrorState error={summary.error} onRetry={() => void summary.refetch()} />
         ) : (
           <>
-            <div className="text-[40px] font-bold tracking-[-0.02em]">₹0</div>
-            <div className="mt-1.5 text-[13px] text-muted">No expenses yet</div>
+            <div className="text-[40px] font-bold tracking-[-0.02em]">
+              {formatINR(summary.data.total)}
+            </div>
+            <div className="mt-1.5 text-[13px] text-muted">
+              {expenseCountLabel(summary.data.count)} · {label}
+            </div>
           </>
         )}
       </Card>
