@@ -26,6 +26,13 @@ describe('TrendChart (P6-3)', () => {
     expect(screen.getByRole('img', { name: 'Spending over time' })).toBeInTheDocument()
   })
 
+  it('draws one bar per trend point', () => {
+    const { container } = render(<TrendChart data={daily} />)
+    // Recharts renders each datum's bar as a <path class="recharts-rectangle">
+    // inside the bar layer; one per point in the series.
+    expect(container.querySelectorAll('.recharts-bar-rectangle')).toHaveLength(3)
+  })
+
   it('renders a `MMM d` x-axis label per day bucket', () => {
     render(<TrendChart data={daily} />)
     // Recharts also mirrors the last-measured label into a hidden measurement
