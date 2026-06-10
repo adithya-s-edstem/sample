@@ -28,6 +28,10 @@ export default defineConfig({
     pool: 'threads',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // jsdom transform/import is heavy; under full-suite parallelism even simple
+    // render-only tests can exceed Vitest's 5s default. Give each test more
+    // headroom so the suite (a CI gate per docs/testing-plan.md) stays stable.
+    testTimeout: 15000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
