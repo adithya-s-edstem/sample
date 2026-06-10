@@ -105,6 +105,21 @@ describe('ExpenseListSection — empty state (P6-4)', () => {
     expect(onEditExpense).toHaveBeenCalledWith(sampleExpensePage.content[0])
   })
 
+  it("fires onDeleteExpense with the row's expense when its delete action is clicked (P7-4)", async () => {
+    server.use(http.get('/api/expenses', () => HttpResponse.json(sampleExpensePage)))
+    const onDeleteExpense = vi.fn()
+
+    renderWithProviders(<ExpenseListSection onDeleteExpense={onDeleteExpense} />, {
+      initialMonth: JUNE_2026,
+    })
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^Delete expense/ })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /^Delete expense/ }))
+    expect(onDeleteExpense).toHaveBeenCalledWith(sampleExpensePage.content[0])
+  })
+
   it('passes onAddExpense to the empty-state CTA (P7-3)', async () => {
     server.use(http.get('/api/expenses', () => HttpResponse.json(emptyPage)))
     const onAddExpense = vi.fn()

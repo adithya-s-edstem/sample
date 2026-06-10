@@ -5,6 +5,7 @@ import TrendSection from './components/dashboard/TrendSection'
 import FilterBar from './components/dashboard/FilterBar'
 import ExpenseListSection from './components/dashboard/ExpenseListSection'
 import ExpenseFormModal from './components/dashboard/ExpenseFormModal'
+import DeleteExpenseDialog from './components/dashboard/DeleteExpenseDialog'
 import type { Expense } from './api/types'
 
 /*
@@ -16,16 +17,26 @@ import type { Expense } from './api/types'
  * opens the same modal. `null` = closed, `{ mode: 'add' }` = add a new expense,
  * `{ mode: 'edit', expense }` = edit an existing one. The container runs the
  * create/update mutation, which invalidates the list + summaries so the dashboard
- * refreshes live. Delete (P7-4) and the CSV export wiring (P8-3) come later.
+ * refreshes live.
+ *
+ * P7-4 wires Delete: a row's 🗑 action opens a small confirm prompt
+ * (DeleteExpenseDialog) before the API delete runs; on confirm the list +
+ * summaries invalidate so the dashboard updates live. The add/edit modal and the
+ * delete confirm are mutually exclusive states. CSV export wiring (P8-3) comes
+ * later.
  */
 type ModalState = { mode: 'add' } | { mode: 'edit'; expense: Expense } | null
 
 function App() {
   const [modal, setModal] = useState<ModalState>(null)
+  const [deleting, setDeleting] = useState<Expense | null>(null)
 
   const openAdd = () => setModal({ mode: 'add' })
   const openEdit = (expense: Expense) => setModal({ mode: 'edit', expense })
   const closeModal = () => setModal(null)
+
+  const openDelete = (expense: Expense) => setDeleting(expense)
+  const closeDelete = () => setDeleting(null)
 
   return (
     <main className="min-h-screen bg-bg text-ink">
@@ -34,7 +45,11 @@ function App() {
         <SummaryRow />
         <TrendSection />
         <FilterBar />
-        <ExpenseListSection onAddExpense={openAdd} onEditExpense={openEdit} />
+        <ExpenseListSection
+          onAddExpense={openAdd}
+          onEditExpense={openEdit}
+          onDeleteExpense={openDelete}
+        />
       </div>
       {modal && (
         <ExpenseFormModal
@@ -42,6 +57,7 @@ function App() {
           onClose={closeModal}
         />
       )}
+      {deleting && <DeleteExpenseDialog expense={deleting} onClose={closeDelete} />}
     </main>
   )
 }
