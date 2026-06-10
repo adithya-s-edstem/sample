@@ -39,7 +39,7 @@ don't ask me for anything.
 </rules>
 
 <return>
-Once the task is completed, the agent should return the following code
+Once the task is completed, the agent should only return the following json
 ```json
 {
   implementation: "done|failed",
