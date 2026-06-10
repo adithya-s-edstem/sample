@@ -97,8 +97,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P7-2** Add/Edit modal form (amount, date, category) with client validation (amount > 0, required fields) — Owner: Adithya
 - [x] **P7-3** Create/update via API + cache invalidation/refresh — Owner: Adithya
 - [x] **P7-4** Delete with confirm prompt — Owner: Adithya
-- [ ] **P7-5** Component tests: modal validation + edit pre-fill; table rows/actions/empty state
-- [ ] **Exit:** add/edit/delete work end to end and the dashboard updates live
+- [x] **P7-5** Component tests: modal validation + edit pre-fill; table rows/actions/empty state — Owner: Adithya
+- [x] **Exit:** add/edit/delete work end to end and the dashboard updates live
 
 ---
 
