@@ -51,7 +51,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 3 — List, Filter, Pagination & Summaries
 
 - [x] **P3-1** `GET /api/expenses` with `from`, `to`, `category`, `minAmount`, `maxAmount`, `sort`, `page`, `size`; paginated response (defaults to current month) — Owner: Adithya
-- [ ] **P3-2** `GET /api/summary` — total + count for a period (defaults to current month)
+- [x] **P3-2** `GET /api/summary` — total + count for a period (defaults to current month) — Owner: Adithya
 - [ ] **P3-3** `GET /api/summary/by-category` — per-category totals/percent (donut)
 - [ ] **P3-4** `GET /api/summary/trend` — time series with `granularity` (day/month)
 - [ ] **P3-5** Aggregations via JPQL/native queries; verified for money precision
