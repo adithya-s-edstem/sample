@@ -25,6 +25,19 @@ export function formatINR(amount: number): string {
   return `₹${formatted}`
 }
 
+/**
+ * Formats an INR amount with always-two decimals, e.g. `1200` → `₹1,200.00` and
+ * `1234.5` → `₹1,234.50`. Used in the expense table (P7-1) where every row shows
+ * paise for column alignment, matching the dashboard wireframe (`₹1,200.00`).
+ * Display-only formatting of the exact two-decimal wire value — no arithmetic.
+ */
+export function formatINRExact(amount: number): string {
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
 /** Pluralizes the expense count, e.g. `1 expense`, `42 expenses`, `0 expenses`. */
 export function expenseCountLabel(count: number): string {
   return `${count} ${count === 1 ? 'expense' : 'expenses'}`

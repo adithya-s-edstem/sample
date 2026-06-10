@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { expenseCountLabel, formatINR } from './money'
+import { expenseCountLabel, formatINR, formatINRExact } from './money'
 
 describe('formatINR', () => {
   it('formats whole rupee amounts with Indian grouping and no decimals', () => {
@@ -18,6 +18,21 @@ describe('formatINR', () => {
     expect(formatINR(1234.5)).toBe('₹1,234.50')
     // smallest representable amount
     expect(formatINR(0.01)).toBe('₹0.01')
+  })
+})
+
+describe('formatINRExact', () => {
+  it('always shows two decimals, including for whole amounts (table column)', () => {
+    expect(formatINRExact(1200)).toBe('₹1,200.00')
+    expect(formatINRExact(300)).toBe('₹300.00')
+    expect(formatINRExact(0)).toBe('₹0.00')
+  })
+
+  it('formats paise exactly with Indian grouping', () => {
+    expect(formatINRExact(1234.56)).toBe('₹1,234.56')
+    expect(formatINRExact(1234.5)).toBe('₹1,234.50')
+    expect(formatINRExact(0.01)).toBe('₹0.01')
+    expect(formatINRExact(1200000)).toBe('₹12,00,000.00')
   })
 })
 
