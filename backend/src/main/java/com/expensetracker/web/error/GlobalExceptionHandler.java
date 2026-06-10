@@ -21,7 +21,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  *       {@code fieldError} per rejected field.
  *   <li>Unparseable JSON, an unknown {@code category}, or a malformed {@code date}
  *       fail message binding → <b>400</b>.
- *   <li>A bad {@code UUID} path variable → <b>400</b>.
+ *   <li>A bad {@code UUID} path variable, or an invalid query param (unknown
+ *       {@code sort} field/direction, negative {@code page}, zero {@code size}) →
+ *       <b>400</b>.
  *   <li>{@link ExpenseNotFoundException} → <b>404</b>.
  * </ul>
  *
@@ -51,6 +53,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, "Invalid value for parameter '" + ex.getName() + "'", request, List.of());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        // Bad list query params (invalid sort field/direction, negative page,
+        // non-positive size) are signalled by ExpenseQuery as IllegalArgumentException.
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, List.of());
     }
 
     @ExceptionHandler(ExpenseNotFoundException.class)

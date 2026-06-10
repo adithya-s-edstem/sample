@@ -2,10 +2,16 @@ package com.expensetracker.service;
 
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.repository.ExpenseSpecifications;
+import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.PageResponse;
 import com.expensetracker.web.mapper.ExpenseMapper;
+import java.time.LocalDate;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +45,30 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public ExpenseResponse get(UUID id) {
         return ExpenseMapper.toResponse(findOrThrow(id));
+    }
+
+    /**
+     * Filtered, sorted, paginated list of expenses ({@code GET /api/expenses}).
+     *
+     * <p>Applies the contract's defaulting via {@link ExpenseQuery}: when neither
+     * {@code from} nor {@code to} is supplied the range is the current calendar
+     * month; sort defaults to {@code date,desc}; page/size default to {@code 0}/
+     * {@code 50} (capped at {@code 200}). Filters compose through
+     * {@link ExpenseSpecifications}, so any omitted filter imposes no constraint.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<ExpenseResponse> list(ExpenseQuery query) {
+        LocalDate today = LocalDate.now();
+        Specification<Expense> spec = Specification.allOf(
+                ExpenseSpecifications.dateFrom(query.resolvedFrom(today)),
+                ExpenseSpecifications.dateTo(query.resolvedTo(today)),
+                ExpenseSpecifications.hasCategory(query.resolvedCategory()),
+                ExpenseSpecifications.minAmount(query.minAmount()),
+                ExpenseSpecifications.maxAmount(query.maxAmount()));
+
+        Page<ExpenseResponse> page =
+                repository.findAll(spec, query.toPageRequest()).map(ExpenseMapper::toResponse);
+        return PageResponse.of(page, query.resolvedSort());
     }
 
     /** Full-replace update of an existing expense; throws if the id is unknown. */

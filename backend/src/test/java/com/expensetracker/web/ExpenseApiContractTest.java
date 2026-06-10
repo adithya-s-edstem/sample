@@ -318,6 +318,149 @@ class ExpenseApiContractTest {
         assertThat(body.get("amount").decimalValue()).isEqualByComparingTo("9999999999.99");
     }
 
+    // --- GET /api/expenses (list / filter / paginate) ------------------------
+
+    /** Seeds rows spanning May–July 2026 across categories/amounts for the list tests. */
+    private void seedListFixture() throws Exception {
+        createExpense("100.00", "2026-05-31", "FOOD");
+        createExpense("50.00", "2026-06-01", "GROCERIES");
+        createExpense("200.00", "2026-06-15", "FOOD");
+        createExpense("0.01", "2026-06-30", "TRANSPORT");
+        createExpense("1500.00", "2026-07-01", "RENT");
+    }
+
+    @Test
+    void listReturnsContractPageShape() throws Exception {
+        seedListFixture();
+
+        // Explicit range covering everything so the assertion is independent of "today".
+        mockMvc.perform(get("/api/expenses").param("from", "2026-01-01").param("to", "2026-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content", hasSize(5)))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(50))
+                .andExpect(jsonPath("$.totalElements").value(5))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.sort").value("date,desc"));
+    }
+
+    @Test
+    void listPageBodyHasExactlyTheContractFields() throws Exception {
+        seedListFixture();
+
+        MvcResult result = mockMvc.perform(get("/api/expenses").param("from", "2026-01-01"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("content", "page", "size", "totalElements", "totalPages", "sort");
+    }
+
+    @Test
+    void listDefaultsToCurrentMonth() throws Exception {
+        // Two rows in the current month, one outside it; with no from/to the
+        // list must scope to the current month only.
+        java.time.YearMonth thisMonth = java.time.YearMonth.now();
+        createExpense("11.00", thisMonth.atDay(1).toString(), "FOOD");
+        createExpense("22.00", thisMonth.atEndOfMonth().toString(), "RENT");
+        createExpense("33.00", thisMonth.minusMonths(1).atDay(15).toString(), "OTHER");
+
+        mockMvc.perform(get("/api/expenses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void listFiltersByCategory() throws Exception {
+        seedListFixture();
+
+        mockMvc.perform(get("/api/expenses")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-12-31")
+                        .param("category", "FOOD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[*].category", everyItem(is("FOOD"))));
+    }
+
+    @Test
+    void listFiltersByAmountRangeInclusive() throws Exception {
+        seedListFixture();
+
+        mockMvc.perform(get("/api/expenses")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-12-31")
+                        .param("minAmount", "50.00")
+                        .param("maxAmount", "200.00"))
+                .andExpect(status().isOk())
+                // 50.00, 100.00, 200.00 are within [50,200]; 0.01 and 1500.00 are not.
+                .andExpect(jsonPath("$.content", hasSize(3)));
+    }
+
+    @Test
+    void listSortsByAmountAscending() throws Exception {
+        seedListFixture();
+
+        mockMvc.perform(get("/api/expenses")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-12-31")
+                        .param("sort", "amount,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].amount").value(0.01))
+                .andExpect(jsonPath("$.content[4].amount").value(1500.00))
+                .andExpect(jsonPath("$.sort").value("amount,asc"));
+    }
+
+    @Test
+    void listPaginatesWithCappedAndCountedPages() throws Exception {
+        seedListFixture();
+
+        mockMvc.perform(get("/api/expenses")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-12-31")
+                        .param("sort", "date,asc")
+                        .param("page", "1")
+                        .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(5))
+                .andExpect(jsonPath("$.totalPages").value(3));
+    }
+
+    @Test
+    void listCapsSizeAtMax() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("size", "5000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(200));
+    }
+
+    @Test
+    void listReturns400ForInvalidSortField() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("sort", "bogus,asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fieldErrors", hasSize(0)));
+    }
+
+    @Test
+    void listReturns400ForNegativePage() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void listReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/expenses").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
     // --- GET /api/categories --------------------------------------------------
 
     @Test

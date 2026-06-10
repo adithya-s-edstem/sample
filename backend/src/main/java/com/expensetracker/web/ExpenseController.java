@@ -1,10 +1,16 @@
 package com.expensetracker.web;
 
+import com.expensetracker.domain.Category;
 import com.expensetracker.service.ExpenseService;
+import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.PageResponse;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,6 +52,28 @@ public class ExpenseController {
     @ResponseStatus(HttpStatus.CREATED)
     public ExpenseResponse create(@Valid @RequestBody ExpenseRequest request) {
         return service.create(request);
+    }
+
+    /**
+     * Filtered, sorted, paginated list ({@code GET /api/expenses}). Every query
+     * param is optional; the contract's defaults (current-month range, {@code
+     * date,desc} sort, page {@code 0} / size {@code 50}) are applied in
+     * {@link ExpenseQuery}. A malformed {@code date}/{@code category}/number or an
+     * invalid {@code sort}/{@code page}/{@code size} surfaces as a uniform 400 via
+     * the global handler.
+     */
+    @GetMapping
+    public PageResponse<ExpenseResponse> list(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return service.list(new ExpenseQuery(from, to, category, minAmount, maxAmount, q, sort, page, size));
     }
 
     @GetMapping("/{id}")
