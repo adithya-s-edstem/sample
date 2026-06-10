@@ -3,6 +3,7 @@ package com.expensetracker.repository;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
+import com.expensetracker.repository.projection.TrendProjection;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -63,4 +64,50 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
             order by sum(e.amount) desc, e.category asc
             """)
     List<CategorySummaryProjection> summarizeByCategory(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /**
+     * Daily spending series over an inclusive date range, grouped and computed in
+     * the database for the {@code day} granularity of {@code GET /api/summary/trend}
+     * (P3-4).
+     *
+     * <p>Native Postgres so the bucket key is formatted to the contract's calendar
+     * shape ({@code YYYY-MM-DD}) in the DB; one row per day that has at least one
+     * expense (empty days are omitted), ascending by date. {@code total} stays
+     * exact decimal (the column is {@code NUMERIC(12,2)}), so no float ever touches
+     * the money value.
+     */
+    @Query(
+            value =
+                    """
+                    select to_char(e.date, 'YYYY-MM-DD') as period, sum(e.amount) as total
+                    from expenses e
+                    where e.date >= :from and e.date <= :to
+                    group by e.date
+                    order by e.date asc
+                    """,
+            nativeQuery = true)
+    List<TrendProjection> summarizeTrendByDay(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /**
+     * Monthly spending series over an inclusive date range, grouped and computed in
+     * the database for the {@code month} granularity of
+     * {@code GET /api/summary/trend} (P3-4).
+     *
+     * <p>Native Postgres so the bucket key is formatted to the contract's calendar
+     * shape ({@code YYYY-MM}) in the DB; one row per month that has at least one
+     * expense (empty months are omitted), ascending by month. {@code total} stays
+     * exact decimal (the column is {@code NUMERIC(12,2)}), so no float ever touches
+     * the money value.
+     */
+    @Query(
+            value =
+                    """
+                    select to_char(e.date, 'YYYY-MM') as period, sum(e.amount) as total
+                    from expenses e
+                    where e.date >= :from and e.date <= :to
+                    group by to_char(e.date, 'YYYY-MM')
+                    order by to_char(e.date, 'YYYY-MM') asc
+                    """,
+            nativeQuery = true)
+    List<TrendProjection> summarizeTrendByMonth(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

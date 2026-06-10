@@ -690,6 +690,142 @@ class ExpenseApiContractTest {
         assertThat(body.get("categories").get(0).get("total").decimalValue()).isEqualByComparingTo("0.30");
     }
 
+    // --- GET /api/summary/trend (spending over time) -------------------------
+
+    @Test
+    void trendReturnsContractBodyShapeWithExactlyTheContractFields() throws Exception {
+        // A single-month range → day granularity by default.
+        createExpense("100.00", "2026-06-01", "FOOD");
+        createExpense("250.00", "2026-06-15", "RENT");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary/trend").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.from").value("2026-06-01"))
+                .andExpect(jsonPath("$.to").value("2026-06-30"))
+                .andExpect(jsonPath("$.granularity").value("day"))
+                .andExpect(jsonPath("$.points", hasSize(2)))
+                .andExpect(jsonPath("$.points[0].period").value("2026-06-01"))
+                .andExpect(jsonPath("$.points[0].total").value(100.00))
+                .andExpect(jsonPath("$.points[1].period").value("2026-06-15"))
+                .andExpect(jsonPath("$.points[1].total").value(250.00))
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.fieldNames()).toIterable().containsExactlyInAnyOrder("from", "to", "granularity", "points");
+        JsonNode point = body.get("points").get(0);
+        assertThat(point.fieldNames()).toIterable().containsExactlyInAnyOrder("period", "total");
+    }
+
+    @Test
+    void trendDefaultsGranularityToMonthAcrossMultipleMonths() throws Exception {
+        // A range spanning several months defaults to month buckets with YYYY-MM keys.
+        createExpense("21000.00", "2026-01-10", "RENT");
+        createExpense("18750.00", "2026-02-12", "RENT");
+        createExpense("23100.00", "2026-03-05", "RENT");
+
+        mockMvc.perform(get("/api/summary/trend").param("from", "2026-01-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.granularity").value("month"))
+                .andExpect(jsonPath("$.points", hasSize(3)))
+                .andExpect(jsonPath("$.points[0].period").value("2026-01"))
+                .andExpect(jsonPath("$.points[0].total").value(21000.00))
+                .andExpect(jsonPath("$.points[1].period").value("2026-02"))
+                .andExpect(jsonPath("$.points[2].period").value("2026-03"))
+                .andExpect(jsonPath("$.points[2].total").value(23100.00));
+    }
+
+    @Test
+    void trendHonoursExplicitGranularityOverride() throws Exception {
+        // Multi-month range but the caller forces day buckets.
+        createExpense("10.00", "2026-01-05", "FOOD");
+        createExpense("20.00", "2026-02-06", "FOOD");
+
+        mockMvc.perform(get("/api/summary/trend")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-02-28")
+                        .param("granularity", "day"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.granularity").value("day"))
+                .andExpect(jsonPath("$.points", hasSize(2)))
+                .andExpect(jsonPath("$.points[0].period").value("2026-01-05"))
+                .andExpect(jsonPath("$.points[1].period").value("2026-02-06"));
+    }
+
+    @Test
+    void trendDefaultsToCurrentMonthWithDayGranularity() throws Exception {
+        java.time.YearMonth thisMonth = java.time.YearMonth.now();
+        // Two rows in the current month (distinct days), one outside it.
+        createExpense("100.00", thisMonth.atDay(1).toString(), "FOOD");
+        createExpense("250.00", thisMonth.atEndOfMonth().toString(), "RENT");
+        createExpense("999.00", thisMonth.minusMonths(1).atDay(15).toString(), "OTHER");
+
+        mockMvc.perform(get("/api/summary/trend"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.from").value(thisMonth.atDay(1).toString()))
+                .andExpect(jsonPath("$.to").value(thisMonth.atEndOfMonth().toString()))
+                .andExpect(jsonPath("$.granularity").value("day"))
+                .andExpect(jsonPath("$.points", hasSize(2)));
+    }
+
+    @Test
+    void trendReturnsEmptyPointsForEmptyPeriod() throws Exception {
+        // No rows in range → empty points list (not null / not an error), not zero-filled.
+        mockMvc.perform(get("/api/summary/trend").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.granularity").value("day"))
+                .andExpect(jsonPath("$.points", hasSize(0)));
+    }
+
+    @Test
+    void trendReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/summary/trend").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void trendReturns400ForUnknownGranularity() throws Exception {
+        mockMvc.perform(get("/api/summary/trend").param("granularity", "weekly"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    // --- trend money / decimal precision -------------------------------------
+
+    @Test
+    void trendPointTotalsSumManySmallAmountsExactlyWithoutFloatDrift() throws Exception {
+        // Two amounts on the same day must aggregate to exactly 0.30 in one bucket.
+        createExpense("0.10", "2026-06-10", "OTHER");
+        createExpense("0.20", "2026-06-10", "OTHER");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary/trend").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("points")).hasSize(1);
+        assertThat(body.get("points").get(0).get("period").asText()).isEqualTo("2026-06-10");
+        assertThat(body.get("points").get(0).get("total").decimalValue()).isEqualByComparingTo("0.30");
+    }
+
+    @Test
+    void trendMonthBucketSumsHighValuesWithinNumeric12And2Range() throws Exception {
+        createExpense("9999999998.99", "2026-01-10", "RENT");
+        createExpense("1.00", "2026-01-11", "OTHER");
+        createExpense("5.00", "2026-02-01", "FOOD");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary/trend").param("from", "2026-01-01").param("to", "2026-03-31"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("granularity").asText()).isEqualTo("month");
+        assertThat(body.get("points").get(0).get("period").asText()).isEqualTo("2026-01");
+        assertThat(body.get("points").get(0).get("total").decimalValue()).isEqualByComparingTo("9999999999.99");
+    }
+
     // --- GET /api/categories --------------------------------------------------
 
     @Test

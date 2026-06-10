@@ -5,14 +5,19 @@ import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.ExpenseSpecifications;
 import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
+import com.expensetracker.repository.projection.TrendProjection;
 import com.expensetracker.web.dto.CategorySummaryResponse;
 import com.expensetracker.web.dto.CategorySummaryResponse.CategoryShare;
 import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.Granularity;
 import com.expensetracker.web.dto.PageResponse;
 import com.expensetracker.web.dto.SummaryQuery;
 import com.expensetracker.web.dto.SummaryResponse;
+import com.expensetracker.web.dto.TrendQuery;
+import com.expensetracker.web.dto.TrendResponse;
+import com.expensetracker.web.dto.TrendResponse.TrendPoint;
 import com.expensetracker.web.mapper.ExpenseMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -133,6 +138,35 @@ public class ExpenseService {
                 .toList();
 
         return new CategorySummaryResponse(from, to, total, categories);
+    }
+
+    /**
+     * Spending time-series for a period ({@code GET /api/summary/trend}).
+     *
+     * <p>Resolves the date range and bucket size via {@link TrendQuery} (current
+     * month and the day/month default when omitted) and aggregates server-side in
+     * Postgres — one point per non-empty bucket, ascending by calendar period;
+     * empty buckets are omitted (so an empty period yields an empty list, never a
+     * zero-filled one). Each point {@code total} is normalized to the money scale
+     * (scale 2), keeping the value exact decimal end to end. The chosen
+     * {@code granularity} is echoed back so the frontend can render directly.
+     */
+    @Transactional(readOnly = true)
+    public TrendResponse summaryTrend(TrendQuery query) {
+        LocalDate today = LocalDate.now();
+        LocalDate from = query.resolvedFrom(today);
+        LocalDate to = query.resolvedTo(today);
+        Granularity granularity = query.resolvedGranularity(today);
+
+        List<TrendProjection> rows = granularity == Granularity.MONTH
+                ? repository.summarizeTrendByMonth(from, to)
+                : repository.summarizeTrendByDay(from, to);
+
+        List<TrendPoint> points = rows.stream()
+                .map(row -> new TrendPoint(row.getPeriod(), row.getTotal().setScale(2, RoundingMode.UNNECESSARY)))
+                .toList();
+
+        return new TrendResponse(from, to, granularity, points);
     }
 
     /**
