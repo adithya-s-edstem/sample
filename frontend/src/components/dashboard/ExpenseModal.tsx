@@ -38,6 +38,12 @@ type ExpenseModalProps = {
   onClose: () => void
   /** Disables the form/actions while a submit is in flight. */
   submitting?: boolean
+  /**
+   * A server-side error message from a failed create/update (e.g. a 400 the
+   * client validation didn't catch). Shown as a form-level banner; the server
+   * stays the source of truth (P7-3).
+   */
+  serverError?: string
 }
 
 type FieldErrors = {
@@ -77,7 +83,13 @@ function validate(amount: string, date: string, category: string): FieldErrors {
   return errors
 }
 
-function ExpenseModal({ expense, onSubmit, onClose, submitting = false }: ExpenseModalProps) {
+function ExpenseModal({
+  expense,
+  onSubmit,
+  onClose,
+  submitting = false,
+  serverError,
+}: ExpenseModalProps) {
   const isEdit = expense !== undefined
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '')
   const [date, setDate] = useState(expense ? expense.date : today())
@@ -143,6 +155,14 @@ function ExpenseModal({ expense, onSubmit, onClose, submitting = false }: Expens
         <p className="mb-5 mt-1 text-[13px] text-muted">Record where your money went.</p>
 
         <form onSubmit={handleSubmit} noValidate>
+          {serverError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-[10px] border border-danger bg-danger/5 px-3.5 py-2.5 text-sm text-danger"
+            >
+              {serverError}
+            </p>
+          )}
           <div className="mb-4">
             <label htmlFor={amountId} className="mb-1.5 block text-[13px] font-semibold text-ink">
               Amount (₹)
