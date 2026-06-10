@@ -20,7 +20,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P0-6** Configure Vite dev proxy `/api` → backend; configure backend CORS for dev origin
 - [x] **P0-7** Tooling: ESLint + Prettier (frontend); Spotless/Checkstyle optional (backend)
 - [x] **P0-8** Basic CI (build + test both apps); README with run instructions
-- [ ] **Exit:** `docker compose up` + `mvnw spring-boot:run` + `npm run dev` all start; `/api/health` returns OK and the SPA loads
+- [x] **Exit:** `docker compose up` + `mvnw spring-boot:run` + `npm run dev` all start; `/api/health` returns OK and the SPA loads
 
 ---
 
@@ -44,7 +44,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P2-5** `GET /api/categories` reference endpoint (returns fixed enum set) — Owner: Adithya
 - [x] **P2-6** Web-layer tests (`@WebMvcTest`) + service unit tests (Mockito) — Owner: Adithya
 - [x] **P2-7** Contract tests (MockMvc) against `docs/api-contracts.md`: status codes, body shapes, validation/error JSON — Owner: Adithya
-- [ ] **Exit:** CRUD endpoints match `docs/api-contracts.md`; validation + error responses verified
+- [x] **Exit:** CRUD endpoints match `docs/api-contracts.md`; validation + error responses verified
 
 ---
 
