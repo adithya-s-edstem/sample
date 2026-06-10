@@ -43,9 +43,7 @@ These are cross-cutting rules from the specs — get them right wherever money o
 
 ## Build/run/test
 
-Not yet applicable — no project scaffolding exists. Once Phase 0 of `docs/implementation-plan.md` is done, the intended commands are:
-- Frontend: `npm run dev` (Vite, proxies `/api` to backend), `npm run build`.
-- Backend: `./mvnw spring-boot:run`, `./mvnw clean package`, `./mvnw verify` (unit + integration + JaCoCo).
-- DB: PostgreSQL via Docker Compose.
-
-Update this section with the real commands once they exist.
+Phase 0 scaffolding exists. Current commands:
+- Frontend (`frontend/`): `npm run dev` (Vite, proxies `/api` to backend), `npm run build`, `npm run lint` (ESLint), `npm run format` / `npm run format:check` (Prettier).
+- Backend (`backend/`): `./mvnw spring-boot:run`, `./mvnw verify` (tests + Spotless format check; Testcontainers tests need Docker running), `./mvnw spotless:apply` to fix formatting.
+- DB: `docker compose up` (local Postgres).
