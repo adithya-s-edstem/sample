@@ -6,12 +6,14 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.expensetracker.TestcontainersConfiguration;
@@ -457,6 +459,137 @@ class ExpenseApiContractTest {
     @Test
     void listReturns400ForMalformedDateParam() throws Exception {
         mockMvc.perform(get("/api/expenses").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    // --- GET /api/expenses/export (CSV download) -----------------------------
+
+    /** YYYY-MM-DD date stamp embedded in the export filename, e.g. {@code 2026-06-10}. */
+    private static final String ISO_DATE = "\\d{4}-\\d{2}-\\d{2}";
+
+    /**
+     * Drives the streaming export endpoint end to end: the body is produced via a
+     * {@link org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody},
+     * so the request starts async and must be re-dispatched before the CSV is on the
+     * wire. Returns the fully rendered response so callers can assert headers + body.
+     */
+    private org.springframework.mock.web.MockHttpServletResponse exportResponse(
+            org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request) throws Exception {
+        MvcResult started =
+                mockMvc.perform(request).andExpect(request().asyncStarted()).andReturn();
+        return mockMvc.perform(asyncDispatch(started)).andReturn().getResponse();
+    }
+
+    @Test
+    void exportReturnsCsvWithContractHeadersAndBody() throws Exception {
+        // Two June rows; default sort date,desc → 06-10 then 06-09, matching the
+        // body example in section 4 of api-contracts.md (id,date,category,amount).
+        UUID first = createExpense("1200.00", "2026-06-10", "GROCERIES");
+        UUID second = createExpense("300.00", "2026-06-09", "TRANSPORT");
+
+        org.springframework.mock.web.MockHttpServletResponse response = exportResponse(
+                get("/api/expenses/export").param("from", "2026-06-01").param("to", "2026-06-30"));
+
+        // Headers: text/csv + attachment filename expenses-YYYY-MM-DD.csv.
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getContentType()).contains("text/csv");
+        assertThat(response.getHeader("Content-Disposition"))
+                .matches("attachment; filename=\"expenses-" + ISO_DATE + "\\.csv\"");
+
+        // Body: header line + one CRLF-terminated record per row, exact contract shape.
+        String body = response.getContentAsString();
+        String[] lines = body.split("\r\n");
+        assertThat(lines).hasSize(3);
+        assertThat(lines[0]).isEqualTo("id,date,category,amount");
+        assertThat(lines[1]).isEqualTo(first + ",2026-06-10,GROCERIES,1200.00");
+        assertThat(lines[2]).isEqualTo(second + ",2026-06-09,TRANSPORT,300.00");
+    }
+
+    @Test
+    void exportAppliesTheSameFilterSetAsTheListWithoutPaginating() throws Exception {
+        // The seed spans May–July across categories/amounts (same as the list tests).
+        seedListFixture();
+
+        // Active filter set: FOOD over the whole span, sorted amount,asc, with a tiny
+        // size that the export must ignore (no pagination) — both FOOD rows appear.
+        org.springframework.mock.web.MockHttpServletResponse response = exportResponse(get("/api/expenses/export")
+                .param("from", "2026-01-01")
+                .param("to", "2026-12-31")
+                .param("category", "FOOD")
+                .param("sort", "amount,asc")
+                .param("size", "1"));
+
+        String[] lines = response.getContentAsString().split("\r\n");
+        assertThat(lines).hasSize(3);
+        assertThat(lines[0]).isEqualTo("id,date,category,amount");
+        assertThat(lines[1]).endsWith("2026-05-31,FOOD,100.00");
+        assertThat(lines[2]).endsWith("2026-06-15,FOOD,200.00");
+    }
+
+    @Test
+    void exportDefaultsToCurrentMonthWhenRangeOmitted() throws Exception {
+        java.time.YearMonth thisMonth = java.time.YearMonth.now();
+        // One row in the current month, one outside it; with no from/to the export
+        // scopes to the current month only (same defaulting as the list).
+        createExpense("77.00", thisMonth.atDay(1).toString(), "FOOD");
+        createExpense("999.00", thisMonth.minusMonths(1).atDay(15).toString(), "RENT");
+
+        org.springframework.mock.web.MockHttpServletResponse response = exportResponse(get("/api/expenses/export"));
+
+        String[] lines = response.getContentAsString().split("\r\n");
+        assertThat(lines).hasSize(2);
+        assertThat(lines[1]).endsWith("FOOD,77.00");
+    }
+
+    @Test
+    void exportReturnsHeaderOnlyForAnEmptyMonth() throws Exception {
+        seedListFixture();
+
+        // A range with no rows still yields a well-formed CSV: just the header line.
+        org.springframework.mock.web.MockHttpServletResponse response = exportResponse(
+                get("/api/expenses/export").param("from", "2030-01-01").param("to", "2030-01-31"));
+
+        assertThat(response.getContentType()).contains("text/csv");
+        assertThat(response.getContentAsString()).isEqualTo("id,date,category,amount\r\n");
+    }
+
+    @Test
+    void exportRendersAmountsWithTwoDecimalsAndNoScientificNotation() throws Exception {
+        // Round-trips through real Postgres: a high NUMERIC(12,2) value, a whole rupee,
+        // and the smallest positive amount must all print as plain 2-decimal text — no
+        // exponent (e.g. never 1.0E10), per the money-precision rule in CLAUDE.md.
+        createExpense("9999999999.99", "2026-06-01", "RENT");
+        createExpense("1500", "2026-06-02", "RENT");
+        createExpense("0.01", "2026-06-03", "OTHER");
+
+        org.springframework.mock.web.MockHttpServletResponse response = exportResponse(get("/api/expenses/export")
+                .param("from", "2026-06-01")
+                .param("to", "2026-06-30")
+                .param("sort", "date,asc"));
+
+        String[] lines = response.getContentAsString().split("\r\n");
+        assertThat(lines).hasSize(4);
+        // Each amount is the 4th CSV field: plain decimal, exactly two places, no 'e'/'E'.
+        assertThat(lines[1].split(",")[3]).isEqualTo("9999999999.99");
+        assertThat(lines[2].split(",")[3]).isEqualTo("1500.00");
+        assertThat(lines[3].split(",")[3]).isEqualTo("0.01");
+        for (int i = 1; i < lines.length; i++) {
+            assertThat(lines[i].split(",")[3]).doesNotContainIgnoringCase("e");
+        }
+    }
+
+    @Test
+    void exportReturns400ForMalformedDateParam() throws Exception {
+        // Binding fails before streaming starts, so this is a synchronous uniform 400.
+        mockMvc.perform(get("/api/expenses/export").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void exportReturns400ForUnknownCategoryParam() throws Exception {
+        mockMvc.perform(get("/api/expenses/export").param("category", "NOT_A_CATEGORY"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }
