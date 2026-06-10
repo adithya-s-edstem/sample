@@ -100,6 +100,29 @@ describe('FilterBar — bound to the list query params (P8-1)', () => {
     await waitFor(() => expect(lastParams().get('to')).toBe('2026-06-20'))
   })
 
+  it('constrains the date inputs so the range cannot invert (To ≥ From)', () => {
+    renderBar({ from: '2026-06-10', to: '2026-06-20' })
+    // The "From" input can't exceed the chosen "To", and vice versa — a UX guard
+    // that keeps the user from picking an inverted range in the date pickers.
+    expect(screen.getByLabelText('From date')).toHaveAttribute('max', '2026-06-20')
+    expect(screen.getByLabelText('To date')).toHaveAttribute('min', '2026-06-10')
+  })
+
+  it('leaves the date constraints unset when the opposite bound is empty', () => {
+    renderBar({ from: '', to: '' })
+    expect(screen.getByLabelText('From date')).not.toHaveAttribute('max')
+    expect(screen.getByLabelText('To date')).not.toHaveAttribute('min')
+  })
+
+  it('offers every fixed category (plus "All") in the category filter', () => {
+    renderBar()
+    const select = screen.getByLabelText('Filter by category')
+    // 9 fixed categories + the "All" sentinel option.
+    expect(select.querySelectorAll('option')).toHaveLength(10)
+    expect(screen.getByRole('option', { name: 'All' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument()
+  })
+
   it('shows a Clear control only when a filter is active and resets the query', async () => {
     renderBar()
     expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()

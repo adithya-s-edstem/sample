@@ -41,6 +41,26 @@ describe('CategoryDonut (P6-2)', () => {
     expect(items[2]).toHaveTextContent('₹800 · 4.44%')
   })
 
+  it('draws one donut slice per category', () => {
+    const { container } = render(<CategoryDonut data={multi} />)
+    // Recharts renders each Pie <Cell> as a <path class="recharts-sector">; one
+    // per category in the breakdown.
+    expect(container.querySelectorAll('path.recharts-sector')).toHaveLength(3)
+  })
+
+  it('tints each legend dot with the slice color so it matches the donut', () => {
+    render(<CategoryDonut data={multi} />)
+    const items = screen.getAllByRole('listitem')
+    // Each legend row leads with a color swatch (aria-hidden) carrying the
+    // per-category fill; assert the swatches are present and individually colored.
+    const swatches = items.map((li) => li.querySelector('span[aria-hidden="true"]'))
+    expect(swatches.every((s) => s !== null)).toBe(true)
+    const colors = swatches.map((s) => (s as HTMLElement).style.background)
+    expect(colors.every((c) => c !== '')).toBe(true)
+    // Distinct categories get distinct colors.
+    expect(new Set(colors).size).toBe(3)
+  })
+
   it('formats paise exactly with two decimals (no float drift)', () => {
     const data: CategorySummaryResponse = {
       from: '2026-06-01',
