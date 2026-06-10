@@ -38,7 +38,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 2 — CRUD API
 
 - [x] **P2-1** DTOs: `ExpenseRequest`, `ExpenseResponse` + entity↔DTO mapping — Owner: Adithya
-- [ ] **P2-2** `ExpenseService` — create/read/update/delete business logic
+- [x] **P2-2** `ExpenseService` — create/read/update/delete business logic — Owner: Adithya
 - [ ] **P2-3** `ExpenseController` — `POST /api/expenses`, `GET /api/expenses/{id}`, `PUT /api/expenses/{id}`, `DELETE /api/expenses/{id}`
 - [ ] **P2-4** Bean Validation (amount > 0, required date/category) + global exception handler with uniform error shape (`timestamp, status, error, message, path, fieldErrors[]`)
 - [ ] **P2-5** `GET /api/categories` reference endpoint (returns fixed enum set)
