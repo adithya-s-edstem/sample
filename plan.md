@@ -1,0 +1,8 @@
+- Requirements [done]
+- Technical Architecture (Stack, Libraries, Data Storage)
+- Solution
+- API Contracts
+- Wireframes
+- Implementation Plan
+- Testing Plan
+- Github Issues
