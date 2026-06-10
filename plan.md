@@ -10,5 +10,5 @@ Ask me for the content of each section and fill in the corresponding MD file.
 - Solution [done] - "solution.md"
 - API Contracts [done] - "api-contracts.md"
 - Wireframes [done] - "wireframes.md"
-- Implementation Plan
+- Implementation Plan [done] - "implementation-plan.md"
 - Testing Plan
