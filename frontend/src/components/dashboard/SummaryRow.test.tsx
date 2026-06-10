@@ -104,3 +104,77 @@ describe('SummaryRow — "Category Breakdown" donut (P6-2)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument())
   })
 })
+
+describe('SummaryRow — filters drive the summary scope (P8-2)', () => {
+  it('scopes /summary and /summary/by-category to the selected month range by default', async () => {
+    let summaryUrl: URL | undefined
+    let byCategoryUrl: URL | undefined
+    server.use(
+      http.get('/api/summary', ({ request }) => {
+        summaryUrl = new URL(request.url)
+        return HttpResponse.json(sampleSummary)
+      }),
+      http.get('/api/summary/by-category', ({ request }) => {
+        byCategoryUrl = new URL(request.url)
+        return HttpResponse.json(sampleByCategory)
+      }),
+    )
+
+    renderWithProviders(<SummaryRow />, { initialMonth: JUNE_2026 })
+
+    await waitFor(() => expect(summaryUrl).toBeDefined())
+    await waitFor(() => expect(byCategoryUrl).toBeDefined())
+    expect(summaryUrl?.searchParams.get('from')).toBe('2026-06-01')
+    expect(summaryUrl?.searchParams.get('to')).toBe('2026-06-30')
+    expect(byCategoryUrl?.searchParams.get('from')).toBe('2026-06-01')
+    expect(byCategoryUrl?.searchParams.get('to')).toBe('2026-06-30')
+  })
+
+  it('refines both summary queries when the date-range filter overrides the month', async () => {
+    let summaryUrl: URL | undefined
+    let byCategoryUrl: URL | undefined
+    server.use(
+      http.get('/api/summary', ({ request }) => {
+        summaryUrl = new URL(request.url)
+        return HttpResponse.json(sampleSummary)
+      }),
+      http.get('/api/summary/by-category', ({ request }) => {
+        byCategoryUrl = new URL(request.url)
+        return HttpResponse.json(sampleByCategory)
+      }),
+    )
+
+    renderWithProviders(<SummaryRow />, {
+      initialMonth: JUNE_2026,
+      initialFilters: { from: '2026-06-10', to: '2026-06-20' },
+    })
+
+    await waitFor(() => expect(summaryUrl).toBeDefined())
+    await waitFor(() => expect(byCategoryUrl).toBeDefined())
+    expect(summaryUrl?.searchParams.get('from')).toBe('2026-06-10')
+    expect(summaryUrl?.searchParams.get('to')).toBe('2026-06-20')
+    expect(byCategoryUrl?.searchParams.get('from')).toBe('2026-06-10')
+    expect(byCategoryUrl?.searchParams.get('to')).toBe('2026-06-20')
+  })
+
+  it('does not pass category/amount/search to the summary endpoints (list-only filters)', async () => {
+    let summaryUrl: URL | undefined
+    server.use(
+      http.get('/api/summary', ({ request }) => {
+        summaryUrl = new URL(request.url)
+        return HttpResponse.json(sampleSummary)
+      }),
+    )
+
+    renderWithProviders(<SummaryRow />, {
+      initialMonth: JUNE_2026,
+      initialFilters: { category: 'TRANSPORT', minAmount: '100', maxAmount: '500', q: 'food' },
+    })
+
+    await waitFor(() => expect(summaryUrl).toBeDefined())
+    expect(summaryUrl?.searchParams.get('category')).toBeNull()
+    expect(summaryUrl?.searchParams.get('minAmount')).toBeNull()
+    expect(summaryUrl?.searchParams.get('maxAmount')).toBeNull()
+    expect(summaryUrl?.searchParams.get('q')).toBeNull()
+  })
+})

@@ -69,4 +69,39 @@ describe('TrendSection — spending trend chart (P6-3)', () => {
     renderWithProviders(<TrendSection />, { initialMonth: JUNE_2026 })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument())
   })
+
+  it('scopes the trend query to the selected month range by default (P8-2)', async () => {
+    let requestUrl: URL | undefined
+    server.use(
+      http.get('/api/summary/trend', ({ request }) => {
+        requestUrl = new URL(request.url)
+        return HttpResponse.json(sampleTrend)
+      }),
+    )
+
+    renderWithProviders(<TrendSection />, { initialMonth: JUNE_2026 })
+
+    await waitFor(() => expect(requestUrl).toBeDefined())
+    expect(requestUrl?.searchParams.get('from')).toBe('2026-06-01')
+    expect(requestUrl?.searchParams.get('to')).toBe('2026-06-30')
+  })
+
+  it('refines the trend query when the date-range filter overrides the month (P8-2)', async () => {
+    let requestUrl: URL | undefined
+    server.use(
+      http.get('/api/summary/trend', ({ request }) => {
+        requestUrl = new URL(request.url)
+        return HttpResponse.json(sampleTrend)
+      }),
+    )
+
+    renderWithProviders(<TrendSection />, {
+      initialMonth: JUNE_2026,
+      initialFilters: { from: '2026-06-10', to: '2026-06-20' },
+    })
+
+    await waitFor(() => expect(requestUrl).toBeDefined())
+    expect(requestUrl?.searchParams.get('from')).toBe('2026-06-10')
+    expect(requestUrl?.searchParams.get('to')).toBe('2026-06-20')
+  })
 })
