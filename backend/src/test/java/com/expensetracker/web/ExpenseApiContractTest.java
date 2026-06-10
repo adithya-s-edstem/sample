@@ -461,6 +461,107 @@ class ExpenseApiContractTest {
                 .andExpect(jsonPath("$.status").value(400));
     }
 
+    // --- GET /api/summary (total + count for a period) -----------------------
+
+    @Test
+    void summaryReturnsContractBodyShapeWithExactlyTheContractFields() throws Exception {
+        createExpense("12000.00", "2026-06-05", "RENT");
+        createExpense("500.00", "2026-06-06", "FOOD");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.from").value("2026-06-01"))
+                .andExpect(jsonPath("$.to").value("2026-06-30"))
+                .andExpect(jsonPath("$.total").value(12500.00))
+                .andExpect(jsonPath("$.count").value(2))
+                .andExpect(jsonPath("$.currency").value("INR"))
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.fieldNames())
+                .toIterable()
+                .containsExactlyInAnyOrder("from", "to", "total", "count", "currency");
+    }
+
+    @Test
+    void summaryDefaultsToCurrentMonth() throws Exception {
+        java.time.YearMonth thisMonth = java.time.YearMonth.now();
+        // Two rows in the current month, one outside it; with no from/to the
+        // summary must aggregate the current month only.
+        createExpense("100.00", thisMonth.atDay(1).toString(), "FOOD");
+        createExpense("250.00", thisMonth.atEndOfMonth().toString(), "RENT");
+        createExpense("999.00", thisMonth.minusMonths(1).atDay(15).toString(), "OTHER");
+
+        mockMvc.perform(get("/api/summary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.from").value(thisMonth.atDay(1).toString()))
+                .andExpect(jsonPath("$.to").value(thisMonth.atEndOfMonth().toString()))
+                .andExpect(jsonPath("$.total").value(350.00))
+                .andExpect(jsonPath("$.count").value(2));
+    }
+
+    @Test
+    void summaryReportsZeroTotalAndCountForEmptyPeriod() throws Exception {
+        // No rows in range → total 0.00, count 0 (not null / not an error).
+        mockMvc.perform(get("/api/summary").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0.00))
+                .andExpect(jsonPath("$.count").value(0))
+                .andExpect(jsonPath("$.currency").value("INR"));
+    }
+
+    @Test
+    void summaryRangeBoundsAreInclusive() throws Exception {
+        createExpense("10.00", "2026-06-01", "FOOD"); // on the from boundary
+        createExpense("20.00", "2026-06-30", "FOOD"); // on the to boundary
+        createExpense("30.00", "2026-07-01", "FOOD"); // just outside
+
+        mockMvc.perform(get("/api/summary").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(30.00))
+                .andExpect(jsonPath("$.count").value(2));
+    }
+
+    @Test
+    void summaryReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/summary").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    // --- Summary money / decimal precision -----------------------------------
+
+    @Test
+    void summaryTotalSumsManySmallAmountsExactlyWithoutFloatDrift() throws Exception {
+        // 0.10 + 0.20 famously drifts in binary floating point; the server-side
+        // aggregation must sum these exactly to 0.30.
+        createExpense("0.10", "2026-06-10", "OTHER");
+        createExpense("0.20", "2026-06-11", "OTHER");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("total").decimalValue()).isEqualByComparingTo("0.30");
+        assertThat(body.get("count").asLong()).isEqualTo(2L);
+    }
+
+    @Test
+    void summaryTotalPreservesHighValueSumWithinNumeric12And2Range() throws Exception {
+        createExpense("9999999998.99", "2026-06-10", "RENT");
+        createExpense("1.00", "2026-06-11", "OTHER");
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/summary").param("from", "2026-06-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode body = bigDecimalMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("total").decimalValue()).isEqualByComparingTo("9999999999.99");
+    }
+
     // --- GET /api/categories --------------------------------------------------
 
     @Test
