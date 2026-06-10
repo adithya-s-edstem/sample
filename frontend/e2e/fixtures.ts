@@ -18,7 +18,7 @@ import { test as base, type Page, type Route } from '@playwright/test'
  * loading/error + retry flow deterministically past TanStack Query auto-retries.
  */
 
-export interface ApiExpense {
+interface ApiExpense {
   id: string
   amount: number
   date: string
@@ -46,7 +46,7 @@ const CATEGORIES = [
 ] as const
 
 /** The current month as `YYYY-MM`, so seeds land in the app's default scope. */
-export function currentMonthPrefix(now: Date = new Date()): string {
+function currentMonthPrefix(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
@@ -87,7 +87,7 @@ function nextId(): string {
   return `00000000-0000-4000-8000-${n}`
 }
 
-export type FailableEndpoint =
+type FailableEndpoint =
   | 'list'
   | 'summary'
   | 'summary/by-category'
@@ -130,11 +130,6 @@ class FakeBackend {
 
   private shouldFail(endpoint: FailableEndpoint): boolean {
     return this.failing.has(endpoint)
-  }
-
-  /** Snapshot for assertions in tests. */
-  all(): ApiExpense[] {
-    return [...this.expenses]
   }
 
   private resolveRange(params: URLSearchParams): { from: string; to: string } {
@@ -421,4 +416,3 @@ export const test = base.extend<Fixtures>({
 })
 
 export { expect } from '@playwright/test'
-export { FakeBackend }

@@ -32,6 +32,11 @@ test.describe('Add expense → dashboard updates (testing-plan §5.1)', () => {
     await expect(page.getByRole('row', { name: /Health/ })).toBeVisible()
     await expect(page.getByRole('cell', { name: '₹250.75' })).toBeVisible()
     await expect(total).toHaveText('₹23,151.25')
+
+    // The donut also refreshes: the breakdown card gains a Health legend entry
+    // it didn't have before (testing-plan §5.1: "total, donut … update").
+    const breakdown = page.locator('section', { hasText: 'Category Breakdown' })
+    await expect(breakdown.getByText('Health')).toBeVisible()
   })
 
   test('client validation blocks a non-positive amount', async ({ mountedPage }) => {

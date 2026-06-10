@@ -78,6 +78,10 @@ test.describe('Loading / error + retry (testing-plan §5.7)', () => {
     backend.startFailing('list')
     await page.goto('/')
 
+    // Skeletons show during the fetch (testing-plan §5.7); the list renders
+    // aria-busy skeleton rows while the query is pending + retrying.
+    await expect(page.locator('tr[aria-busy="true"]').first()).toBeVisible()
+
     // Graceful error + Retry surface in the list region (after retries exhaust).
     const error = page.getByText("Couldn't load expenses")
     await expect(error).toBeVisible({ timeout: 20_000 })
