@@ -4,17 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.expensetracker.domain.Category;
 import com.expensetracker.web.dto.ExpenseResponse;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link ExpenseCsvWriter} (P4-1) — the CSV body shape from
- * section 4 of {@code docs/api-contracts.md} and the money-precision rules
- * (two decimals, never scientific notation) from {@code CLAUDE.md}.
+ * Unit tests for {@link ExpenseCsvWriter} (P4-1/P4-2) — the CSV body shape from
+ * section 4 of {@code docs/api-contracts.md}, the money-precision rules (two
+ * decimals, never scientific notation) from {@code CLAUDE.md}, and the streaming
+ * {@code writeTo} path that backs the export endpoint (P4-2).
  */
 class ExpenseCsvWriterTest {
 
@@ -71,5 +74,48 @@ class ExpenseCsvWriterTest {
         assertThat(lines).hasSize(3);
         assertThat(lines[1]).endsWith("2026-06-03,FOOD,10.00");
         assertThat(lines[2]).endsWith("2026-06-01,RENT,20.00");
+    }
+
+    // --- streaming writeTo (P4-2) ---------------------------------------------
+
+    @Test
+    void streamingWritesHeaderOnlyForEmptyStream() {
+        StringWriter out = new StringWriter();
+
+        ExpenseCsvWriter.writeTo(out, Stream.of());
+
+        assertThat(out.toString()).isEqualTo("id,date,category,amount\r\n");
+    }
+
+    @Test
+    void streamingProducesIdenticalOutputToInMemoryWrite() {
+        // The streaming path and the materialized path must render byte-for-byte the
+        // same CSV, so the endpoint's switch to streaming changes nothing on the wire.
+        List<ExpenseResponse> rows = List.of(
+                row("1200.00", LocalDate.of(2026, 6, 10), Category.GROCERIES),
+                row("0.01", LocalDate.of(2026, 6, 8), Category.FOOD),
+                row("9999999999.99", LocalDate.of(2026, 6, 1), Category.RENT));
+
+        StringWriter out = new StringWriter();
+        ExpenseCsvWriter.writeTo(out, rows.stream());
+
+        assertThat(out.toString()).isEqualTo(ExpenseCsvWriter.write(rows));
+    }
+
+    @Test
+    void streamingPreservesStreamOrderAndTwoDecimalAmounts() {
+        StringWriter out = new StringWriter();
+
+        ExpenseCsvWriter.writeTo(
+                out,
+                Stream.of(
+                        row("300", LocalDate.of(2026, 6, 3), Category.TRANSPORT),
+                        row("20.50", LocalDate.of(2026, 6, 1), Category.RENT)));
+
+        String[] lines = out.toString().split("\r\n");
+        assertThat(lines).hasSize(3);
+        assertThat(lines[0]).isEqualTo("id,date,category,amount");
+        assertThat(lines[1]).endsWith("2026-06-03,TRANSPORT,300.00");
+        assertThat(lines[2]).endsWith("2026-06-01,RENT,20.50");
     }
 }

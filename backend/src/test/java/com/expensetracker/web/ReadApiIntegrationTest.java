@@ -1,10 +1,12 @@
 package com.expensetracker.web;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.expensetracker.TestcontainersConfiguration;
@@ -22,6 +24,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * End-to-end integration tests (P3-6) for the read/aggregation endpoints — the
@@ -214,9 +217,13 @@ class ReadApiIntegrationTest {
         seedThreeMonths();
 
         // June bracket [01,30] excludes May 31 and Jul 01; default sort date,desc.
-        // No page/size: every match is exported as CSV rows under the header.
-        String body = mockMvc.perform(
+        // No page/size: every match is streamed as CSV rows under the header.
+        MvcResult started = mockMvc.perform(
                         get("/api/expenses/export").param("from", JUNE_FROM).param("to", JUNE_TO))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        String body = mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(header().string(
@@ -241,12 +248,16 @@ class ReadApiIntegrationTest {
 
         // Wide range + category FOOD → the May 31 and Jun 15 rows, sorted amount,asc.
         // A tiny size param must be ignored (export never paginates): both rows appear.
-        String body = mockMvc.perform(get("/api/expenses/export")
+        MvcResult started = mockMvc.perform(get("/api/expenses/export")
                         .param("from", "2026-01-01")
                         .param("to", "2026-12-31")
                         .param("category", "FOOD")
                         .param("sort", "amount,asc")
                         .param("size", "1"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        String body = mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -262,8 +273,12 @@ class ReadApiIntegrationTest {
     void exportReturnsHeaderOnlyForAnEmptyMonth() throws Exception {
         seedThreeMonths();
 
-        String body = mockMvc.perform(
+        MvcResult started = mockMvc.perform(
                         get("/api/expenses/export").param("from", "2030-01-01").param("to", "2030-01-31"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        String body = mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andReturn()

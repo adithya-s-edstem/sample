@@ -175,42 +175,56 @@ class ExpenseServiceTest {
         verify(repository, never()).delete(any(Expense.class));
     }
 
-    // --- export (GET /api/expenses/export) ------------------------------------
+    // --- export (GET /api/expenses/export, streaming P4-2) --------------------
 
     @Test
-    void exportReturnsAllMatchesMappedWithoutPagination() {
+    void exportCsvStreamsAllMatchesMappedWithoutPagination() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
-        when(repository.findAll(
+        when(repository.streamAll(
                         org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
                         any(org.springframework.data.domain.Sort.class)))
-                .thenReturn(List.of(
+                .thenReturn(java.util.stream.Stream.of(
                         persisted(id1, new BigDecimal("200.00"), LocalDate.of(2026, 6, 15), Category.FOOD),
                         persisted(id2, new BigDecimal("0.01"), LocalDate.of(2026, 6, 30), Category.TRANSPORT)));
 
-        List<ExpenseResponse> rows = service.export(new com.expensetracker.web.dto.ExpenseQuery(
-                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), null, null, null, null, null, null, null));
+        java.io.StringWriter out = new java.io.StringWriter();
+        service.exportCsv(
+                new com.expensetracker.web.dto.ExpenseQuery(
+                        LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), null, null, null, null, null, null, null),
+                out);
 
-        assertThat(rows).hasSize(2);
-        assertThat(rows.get(0).id()).isEqualTo(id1);
-        assertThat(rows.get(0).amount()).isEqualByComparingTo("200.00");
-        assertThat(rows.get(1).amount()).isEqualByComparingTo("0.01");
+        String[] lines = out.toString().split("\r\n");
+        assertThat(lines).hasSize(3);
+        assertThat(lines[0]).isEqualTo("id,date,category,amount");
+        assertThat(lines[1]).isEqualTo(id1 + ",2026-06-15,FOOD,200.00");
+        assertThat(lines[2]).isEqualTo(id2 + ",2026-06-30,TRANSPORT,0.01");
     }
 
     @Test
-    void exportUsesTheResolvedSortFromTheQuery() {
-        when(repository.findAll(
+    void exportCsvUsesTheResolvedSortFromTheQuery() {
+        when(repository.streamAll(
                         org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
                         any(org.springframework.data.domain.Sort.class)))
-                .thenReturn(List.of());
+                .thenReturn(java.util.stream.Stream.of());
 
-        service.export(new com.expensetracker.web.dto.ExpenseQuery(
-                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), null, null, null, null, "amount,asc", null, null));
+        service.exportCsv(
+                new com.expensetracker.web.dto.ExpenseQuery(
+                        LocalDate.of(2026, 6, 1),
+                        LocalDate.of(2026, 6, 30),
+                        null,
+                        null,
+                        null,
+                        null,
+                        "amount,asc",
+                        null,
+                        null),
+                new java.io.StringWriter());
 
         ArgumentCaptor<org.springframework.data.domain.Sort> sortCaptor =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Sort.class);
         verify(repository)
-                .findAll(
+                .streamAll(
                         org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
                         sortCaptor.capture());
         org.springframework.data.domain.Sort.Order order = sortCaptor.getValue().getOrderFor("amount");
@@ -219,22 +233,24 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void exportDefaultsRangeToCurrentMonthWhenOmitted() {
-        when(repository.findAll(
+    void exportCsvDefaultsRangeToCurrentMonthWhenOmitted() {
+        when(repository.streamAll(
                         org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
                         any(org.springframework.data.domain.Sort.class)))
-                .thenReturn(List.of());
+                .thenReturn(java.util.stream.Stream.of());
 
         // No from/to and the default sort → date,desc; current-month defaulting is
-        // applied inside the specification, so we just assert the call is made.
-        List<ExpenseResponse> rows = service.export(
-                new com.expensetracker.web.dto.ExpenseQuery(null, null, null, null, null, null, null, null, null));
+        // applied inside the specification, so we just assert the call is made and
+        // an empty stream renders header-only CSV.
+        java.io.StringWriter out = new java.io.StringWriter();
+        service.exportCsv(
+                new com.expensetracker.web.dto.ExpenseQuery(null, null, null, null, null, null, null, null, null), out);
 
-        assertThat(rows).isEmpty();
+        assertThat(out.toString()).isEqualTo("id,date,category,amount\r\n");
         ArgumentCaptor<org.springframework.data.domain.Sort> sortCaptor =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Sort.class);
         verify(repository)
-                .findAll(
+                .streamAll(
                         org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
                         sortCaptor.capture());
         assertThat(sortCaptor.getValue().getOrderFor("date").getDirection())
