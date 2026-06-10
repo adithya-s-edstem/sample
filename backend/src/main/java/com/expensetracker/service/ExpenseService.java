@@ -6,6 +6,7 @@ import com.expensetracker.repository.ExpenseSpecifications;
 import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
 import com.expensetracker.repository.projection.TrendProjection;
+import com.expensetracker.web.csv.ExpenseCsvWriter;
 import com.expensetracker.web.dto.CategorySummaryResponse;
 import com.expensetracker.web.dto.CategorySummaryResponse.CategoryShare;
 import com.expensetracker.web.dto.ExpenseQuery;
@@ -19,11 +20,13 @@ import com.expensetracker.web.dto.TrendQuery;
 import com.expensetracker.web.dto.TrendResponse;
 import com.expensetracker.web.dto.TrendResponse.TrendPoint;
 import com.expensetracker.web.mapper.ExpenseMapper;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -86,18 +89,22 @@ public class ExpenseService {
     }
 
     /**
-     * All expenses matching the export query ({@code GET /api/expenses/export},
-     * P4-1), in response-DTO form ready for CSV rendering.
+     * Streams every expense matching the export query ({@code GET
+     * /api/expenses/export}, P4-2) as CSV to {@code out}.
      *
      * <p>Applies the <b>same filters and ordering as the list</b> (date range with
      * the contract's current-month defaulting, category, amount range, {@code
      * date,desc} default sort) via {@link ExpenseQuery} and
      * {@link ExpenseSpecifications}, but <b>without pagination</b> — every match is
-     * returned. Money stays exact decimal end to end (entity {@code BigDecimal} →
-     * {@link ExpenseResponse}); the caller renders it at scale 2.
+     * exported. Rows are pulled lazily from a cursor-backed
+     * {@link ExpenseRepository#streamAll repository stream} and written row by row,
+     * so the response never materializes the full result set in memory. The stream
+     * is opened and consumed inside this read-only transaction (try-with-resources
+     * closes the underlying cursor). Money stays exact decimal end to end (entity
+     * {@code BigDecimal} → {@link ExpenseResponse}); the writer renders it at scale 2.
      */
     @Transactional(readOnly = true)
-    public List<ExpenseResponse> export(ExpenseQuery query) {
+    public void exportCsv(ExpenseQuery query, Writer out) {
         LocalDate today = LocalDate.now();
         Specification<Expense> spec = Specification.allOf(
                 ExpenseSpecifications.dateFrom(query.resolvedFrom(today)),
@@ -106,9 +113,9 @@ public class ExpenseService {
                 ExpenseSpecifications.minAmount(query.minAmount()),
                 ExpenseSpecifications.maxAmount(query.maxAmount()));
 
-        return repository.findAll(spec, query.toSort()).stream()
-                .map(ExpenseMapper::toResponse)
-                .toList();
+        try (Stream<Expense> rows = repository.streamAll(spec, query.toSort())) {
+            ExpenseCsvWriter.writeTo(out, rows.map(ExpenseMapper::toResponse));
+        }
     }
 
     /**

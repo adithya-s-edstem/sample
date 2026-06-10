@@ -7,6 +7,8 @@ import com.expensetracker.repository.projection.TrendProjection;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +29,22 @@ import org.springframework.data.repository.query.Param;
  * computed in Postgres and money precision is preserved end to end.
  */
 public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpecificationExecutor<Expense> {
+
+    /**
+     * Cursor-backed stream of the matching expenses for CSV export
+     * ({@code GET /api/expenses/export}, P4-2). Applies the same dynamic filters and
+     * ordering as the list ({@link ExpenseSpecifications} + the resolved {@link
+     * org.springframework.data.domain.Sort}) but <b>without pagination</b>, fetching
+     * rows lazily through a JDBC cursor instead of materializing the whole result in
+     * memory — so an arbitrarily large export streams to the wire at constant memory.
+     *
+     * <p>The returned {@link Stream} is backed by an open {@code ResultSet}/{@code
+     * EntityManager}, so it <b>must</b> be consumed inside the same read-only
+     * transaction and closed (try-with-resources). Callers should not buffer it.
+     */
+    default Stream<Expense> streamAll(Specification<Expense> spec, org.springframework.data.domain.Sort sort) {
+        return findBy(spec, query -> query.sortBy(sort).stream());
+    }
 
     /**
      * Total amount and expense count over an inclusive date range, computed in the

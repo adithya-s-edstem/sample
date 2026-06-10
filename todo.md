@@ -63,7 +63,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 4 — CSV Export
 
 - [x] **P4-1** `GET /api/expenses/export` — same filters as list, no pagination — Owner: Adithya
-- [ ] **P4-2** Stream CSV with correct headers (`text/csv`, `Content-Disposition`)
+- [x] **P4-2** Stream CSV with correct headers (`text/csv`, `Content-Disposition`) — Owner: Adithya
 - [ ] **P4-3** Test content + headers; INR amounts formatted with 2 decimals, no scientific notation
 - [ ] **Exit:** export downloads a correct CSV for the active filter set
 

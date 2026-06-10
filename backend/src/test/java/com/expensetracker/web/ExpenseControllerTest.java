@@ -3,10 +3,12 @@ package com.expensetracker.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -14,15 +16,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.expensetracker.domain.Category;
 import com.expensetracker.service.ExpenseNotFoundException;
 import com.expensetracker.service.ExpenseService;
+import com.expensetracker.web.csv.ExpenseCsvWriter;
 import com.expensetracker.web.dto.ExpenseQuery;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
 import com.expensetracker.web.dto.PageResponse;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -35,6 +40,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * Web-layer tests for {@link ExpenseController} with the service mocked. Verifies
@@ -147,15 +153,27 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void exportReturnsCsvWithHeadersAndDelegatesParsedQuery() throws Exception {
+    void exportStreamsCsvWithHeadersAndDelegatesParsedQuery() throws Exception {
+        // The streaming endpoint writes via service.exportCsv(query, writer); stub it
+        // to render one row through the real writer so we assert the wire body too.
         ExpenseResponse row = sampleResponse(new BigDecimal("1200.00"), LocalDate.of(2026, 6, 10), Category.GROCERIES);
-        when(service.export(any())).thenReturn(List.of(row));
+        doAnswer(invocation -> {
+                    Writer writer = invocation.getArgument(1);
+                    ExpenseCsvWriter.writeTo(writer, java.util.stream.Stream.of(row));
+                    return null;
+                })
+                .when(service)
+                .exportCsv(any(), any());
 
-        mockMvc.perform(get("/api/expenses/export")
+        MvcResult started = mockMvc.perform(get("/api/expenses/export")
                         .param("from", "2026-06-01")
                         .param("to", "2026-06-30")
                         .param("category", "GROCERIES")
                         .param("minAmount", "100"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(header().string(
@@ -167,7 +185,7 @@ class ExpenseControllerTest {
                         content().string(org.hamcrest.Matchers.containsString(ID + ",2026-06-10,GROCERIES,1200.00")));
 
         ArgumentCaptor<ExpenseQuery> captor = ArgumentCaptor.forClass(ExpenseQuery.class);
-        verify(service).export(captor.capture());
+        verify(service).exportCsv(captor.capture(), any());
         ExpenseQuery q = captor.getValue();
         assertThat(q.from()).isEqualTo(LocalDate.of(2026, 6, 1));
         assertThat(q.to()).isEqualTo(LocalDate.of(2026, 6, 30));
@@ -180,11 +198,12 @@ class ExpenseControllerTest {
 
     @Test
     void exportReturns400ForMalformedDateParam() throws Exception {
+        // Binding fails before the async stream starts, so the body is never invoked.
         mockMvc.perform(get("/api/expenses/export").param("from", "2026-13-40"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
 
-        verify(service, never()).export(any());
+        verify(service, never()).exportCsv(any(), any());
     }
 
     @Test
