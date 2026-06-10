@@ -1,9 +1,9 @@
 # Expense Tracker — Implementation Todo
 
 Backend-first build order: build and verify the Spring Boot API against
-`api-contracts.md`, then build the React frontend against the live API. Phases
+`docs/api-contracts.md`, then build the React frontend against the live API. Phases
 are sequential milestones; check each task as it lands. Testing tasks are woven
-into each phase per `testing-plan.md`.
+into each phase per `docs/testing-plan.md`.
 
 Each task has a unique ID (`<phase>-<n>`) so it can be assigned to a team
 member. Add an **Owner** column note next to any task as you delegate.
@@ -43,8 +43,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [ ] **P2-4** Bean Validation (amount > 0, required date/category) + global exception handler with uniform error shape (`timestamp, status, error, message, path, fieldErrors[]`)
 - [ ] **P2-5** `GET /api/categories` reference endpoint (returns fixed enum set)
 - [ ] **P2-6** Web-layer tests (`@WebMvcTest`) + service unit tests (Mockito)
-- [ ] **P2-7** Contract tests (MockMvc) against `api-contracts.md`: status codes, body shapes, validation/error JSON
-- [ ] **Exit:** CRUD endpoints match `api-contracts.md`; validation + error responses verified
+- [ ] **P2-7** Contract tests (MockMvc) against `docs/api-contracts.md`: status codes, body shapes, validation/error JSON
+- [ ] **Exit:** CRUD endpoints match `docs/api-contracts.md`; validation + error responses verified
 
 ---
 
@@ -74,7 +74,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [ ] **P5-1** App shell, layout, Tailwind theme matching wireframes (clean/minimal)
 - [ ] **P5-2** Typed API client (`Expense`, request/response types) + TanStack Query hooks (`useExpenses`, `useSummary`, etc.)
 - [ ] **P5-3** Month selector state (defaults to current month) feeding all queries
-- [ ] **P5-4** Loading skeletons + error states (per `wireframes/loading.html`)
+- [ ] **P5-4** Loading skeletons + error states (per `docs/wireframes/loading.html`)
 - [ ] **P5-5** Hook tests with MSW (loading/success/error, cache invalidation on mutation)
 - [ ] **Exit:** app loads, calls the real API, shows loading/error states
 
@@ -85,7 +85,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [ ] **P6-1** "This Month" total card
 - [ ] **P6-2** Category donut (Recharts) from `/summary/by-category` + legend
 - [ ] **P6-3** Spending trend (Recharts bar/line) from `/summary/trend`
-- [ ] **P6-4** Empty state (no expenses) per `wireframes/empty.html`
+- [ ] **P6-4** Empty state (no expenses) per `docs/wireframes/empty.html`
 - [ ] **P6-5** Component tests: charts render summary data + empty/zero state
 - [ ] **Exit:** dashboard renders real data and matches the dashboard wireframe
 
