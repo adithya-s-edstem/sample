@@ -12,10 +12,10 @@ local-only web application with a clean, minimal interface.
 
 | Aspect    | Decision                                                        |
 |-----------|-----------------------------------------------------------------|
-| Platform  | Web app (runs in the browser)                                   |
-| Users     | Single user — personal use, **no login/accounts required**      |
-| Storage   | **Local only** — data stays on the device, no backend/sync needed (e.g. browser local storage / local file) |
-| Privacy   | No internet connection required; no data leaves the device      |
+| Platform  | Web app — React SPA frontend + Java (Spring Boot) REST API backend |
+| Users     | Single user — personal use, **no login/accounts required** (v1)  |
+| Storage   | **Server-backed** — data persisted in **PostgreSQL** via the backend API (see `technical-architecture.md`) |
+| Privacy   | Single-user personal use; no third-party analytics or external data sharing |
 
 ## 3. Primary Goal
 
@@ -77,6 +77,5 @@ Out of scope for v1:
 ## 8. Open Questions / To Confirm Later
 
 - Exact list of predefined categories.
-- Where local data is persisted (browser `localStorage`, IndexedDB, or a local file).
 - Chart types to include (pie/donut for category split, bar/line for trend).
 - Whether the dashboard period selector should support arbitrary custom ranges later.
