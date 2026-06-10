@@ -75,8 +75,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P5-2** Typed API client (`Expense`, request/response types) + TanStack Query hooks (`useExpenses`, `useSummary`, etc.) — Owner: Adithya
 - [ ] **P5-3** Month selector state (defaults to current month) feeding all queries
 - [x] **P5-4** Loading skeletons + error states (per `docs/wireframes/loading.html`) — Owner: Adithya
-- [ ] **P5-5** Hook tests with MSW (loading/success/error, cache invalidation on mutation)
-- [ ] **Exit:** app loads, calls the real API, shows loading/error states
+- [x] **P5-5** Hook tests with MSW (loading/success/error, cache invalidation on mutation) — Owner: Adithya
+- [x] **Exit:** app loads, calls the real API, shows loading/error states
 
 ---
 
