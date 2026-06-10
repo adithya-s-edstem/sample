@@ -17,6 +17,7 @@ The task ID is passed as an argument (e.g. `/implement-todo P2-3`). If none is g
 ## Step 1 — Read the assigned item
 
 Read `todo.md` and locate the task by its ID. Capture:
+
 - The exact task text and which **Phase** it belongs to.
 - Any sibling tasks in the same phase that are prerequisites (lower-numbered, unchecked).
 - The **Exit** criterion for the phase — your implementation should move toward it.
@@ -55,27 +56,32 @@ Wait for all three. Reconcile their findings into a short implementation outline
 > steps below are still correct — branch off `main` regardless.
 
 Run:
+
 ```
 git fetch origin
 git checkout main
 git pull --ff-only origin main
 git status   # confirm clean
 ```
+
 If the working tree is dirty, stop and ask the user how to proceed (stash vs. commit) — never
 discard their changes.
 
 ## Step 4 — Create the work branch
 
 Branch name format: `todo-{id}` lowercased (e.g. task `P2-3` → `todo-p2-3`).
+
 ```
 git checkout -b todo-p2-3
 ```
+
 If the branch already exists locally or on origin, ask the user whether to reuse, rename, or abort.
 
 ## Step 5 — Implement
 
 Implement the task to satisfy its requirements and move the phase toward its Exit criterion,
 strictly honoring the conventions from Step 2:
+
 - Money is exact decimal end-to-end — `BigDecimal` / `NUMERIC(12,2)`, never floats.
 - API base path `/api`; JSON (except CSV export); UUID string IDs; dates `YYYY-MM-DD`;
   timestamps ISO-8601 UTC.
@@ -89,6 +95,7 @@ unrelated work.
 ## Step 6 — Write tests per testing-plan.md
 
 Consult `testing-plan.md` and write the tests appropriate to the task's layer:
+
 - **Backend unit** (JUnit 5 + Mockito): service logic, aggregation, CSV, mappers.
 - **Backend integration** (Spring Boot Test, `@WebMvcTest`, Testcontainers Postgres): repository
   queries, migrations, aggregation endpoints.
@@ -99,36 +106,15 @@ Consult `testing-plan.md` and write the tests appropriate to the task's layer:
   (`0.01` accepted, `0`/negative rejected, exact round-trip, 2-decimal CSV).
 
 Run the relevant test command and confirm green before committing:
+
 - Backend: `./mvnw verify` (or `./mvnw test` for a faster inner loop).
 - Frontend: `npm run test` / `vitest run`.
-Report real results — if tests fail, fix them or say so; never claim green when they aren't.
+  Report real results — if tests fail, fix them or say so; never claim green when they aren't.
 
-## Step 7 — Code review via subagent
-
-Before committing, have a subagent review the work with fresh eyes. Launch **one** Agent
-(general-purpose) with a prompt like:
-
-> "Review the uncommitted changes in this repo (`git diff main` / `git status`) implementing
-> todo task `<id>: <task text>`. Check for: (1) correctness bugs and missed edge cases;
-> (2) violations of the repo's binding conventions — exact-decimal money
-> (`BigDecimal`/`NUMERIC(12,2)`, never floats), API base path `/api`, UUID string IDs,
-> `YYYY-MM-DD` dates / ISO-8601 UTC timestamps, the fixed `Category` enum, the uniform error
-> shape, current-month defaulting; (3) divergence from `docs/api-contracts.md` (endpoints,
-> DTOs, status codes, error bodies must match exactly); (4) missing or weak tests relative to
-> `docs/testing-plan.md`. Do NOT edit any files. Return a numbered list of findings, each with
-> file:line, severity (blocker/should-fix/nit), and a concrete suggested fix. If the diff is
-> clean, say so explicitly."
-
-The subagent must be **read-only** — you apply the fixes, not the reviewer. Then:
-- Fix every **blocker** and **should-fix**; use judgment on nits.
-- Re-run the relevant tests after fixes (back to Step 6's commands) and confirm green.
-- If the reviewer flags a genuine spec/doc conflict, surface it to the user rather than
-  silently picking a side.
-- Briefly relay the review outcome to the user (findings count, what was fixed, what was skipped and why).
-
-## Step 8 — Atomic commits
+## Step 7 — Atomic commits
 
 Commit in small, independently revertible units (each commit builds and is self-contained), e.g.:
+
 1. schema/entity/scaffolding
 2. core logic / endpoint / component
 3. tests
@@ -138,16 +124,17 @@ Use clear messages referencing the task ID, e.g. `P2-3: add ExpenseController CR
 Stage deliberately (`git add <paths>`) — don't blanket-commit unrelated files. Do not amend;
 prefer new commits. Don't add co-author/attribution lines unless the user asks.
 
-## Step 9 — Push
+## Step 8 — Push
 
 ```
 git push -u origin todo-p2-3
 ```
 
-## Step 10 — Open a PR
+## Step 9 — Open a PR
 
 Use `gh pr create`. Base = `main`, head = the work branch. Title: `<task id>: <short summary>`.
 Body should include:
+
 - **Task**: the `todo.md` ID and text.
 - **What changed**: bulleted summary of the implementation.
 - **Tests**: which layers were added/run and their result.
@@ -155,12 +142,14 @@ Body should include:
 - **Closes/relates**: link the phase Exit criterion if it's now met.
 
 Example:
+
 ```
 gh pr create --base main --head todo-p2-3 --title "P2-3: ExpenseController CRUD endpoints" --body "..."
 ```
+
 Return the PR URL to the user.
 
-## Step 11 — Offer to check off the task
+## Step 10 — Offer to check off the task
 
 Ask whether to tick the task's checkbox in `todo.md` (`- [ ]` → `- [x]`) and note the Owner.
 Only do this if the user confirms; commit it as part of the PR branch if so.
