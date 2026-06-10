@@ -33,3 +33,28 @@ const CATEGORY_COLORS: Record<Category, string> = {
 export function categoryColor(category: Category): string {
   return CATEGORY_COLORS[category]
 }
+
+/*
+ * Accessibility (P9-1): the category "pill" tints its background with the
+ * category color at ~10% and prints the label in that same color. Several of the
+ * donut colors (amber, cyan, the violet/teal/pink accents) are too light to meet
+ * WCAG AA (4.5:1) as text on a near-white tint, so the pill uses a darkened
+ * variant of each color for the text while keeping the recognizable hue. The
+ * darker text keeps the pill legible without changing the donut/legend palette.
+ */
+const CATEGORY_PILL_TEXT: Record<Category, string> = {
+  RENT: '#4338ca',
+  GROCERIES: '#0e7490',
+  FOOD: '#b45309',
+  TRANSPORT: '#047857',
+  UTILITIES: '#b91c1c',
+  SHOPPING: '#6d28d9',
+  ENTERTAINMENT: '#be185d',
+  HEALTH: '#0f766e',
+  OTHER: '#4b5563',
+}
+
+/** AA-contrast text color for the category pill (darker than the donut hue). */
+export function categoryPillTextColor(category: Category): string {
+  return CATEGORY_PILL_TEXT[category]
+}
