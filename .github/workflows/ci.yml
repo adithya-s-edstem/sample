@@ -66,8 +66,10 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      # No unit-test runner is wired up yet (Vitest lands with the component tests
-      # in later phases); the production build doubles as the type-check + compile
-      # gate for now.
+      # Vitest + Testing Library + MSW unit/integration tests (hooks, components).
+      - name: Test
+        run: npm run test:coverage
+
+      # The production build doubles as the type-check + compile gate.
       - name: Build
         run: npm run build
