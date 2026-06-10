@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
+import { useFocusTrap } from '../../lib/useFocusTrap'
 
 /*
  * Small confirm prompt (P7-4) shown before a destructive action — currently the
@@ -40,6 +41,8 @@ function ConfirmDialog({
   const titleId = useId()
   const messageId = useId()
   const confirmRef = useRef<HTMLButtonElement>(null)
+  // Trap focus within the dialog and restore it to the trigger on close (P9-1).
+  const dialogRef = useFocusTrap<HTMLDivElement>()
 
   // Close on Escape from anywhere in the dialog (unless an action is in flight).
   useEffect(() => {
@@ -63,6 +66,7 @@ function ConfirmDialog({
       }}
     >
       <div
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
