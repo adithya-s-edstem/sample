@@ -114,7 +114,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 
 ## Phase 9 — Polish, Testing & Hardening
 
-- [ ] **P9-1** Responsive/visual polish vs. wireframes; accessibility pass (labels, focus, contrast)
+- [x] **P9-1** Responsive/visual polish vs. wireframes; accessibility pass (labels, focus, contrast) — Owner: Adithya
 - [ ] **P9-2** Frontend component tests (Vitest + Testing Library) complete for form, list, charts, filters
 - [ ] **P9-3** Formatting util tests: INR display, date formatting/grouping
 - [ ] **P9-4** Playwright E2E for key flows: add → dashboard updates; edit; delete + confirm; filter & search; month navigation + empty state; export CSV; loading/error + retry
