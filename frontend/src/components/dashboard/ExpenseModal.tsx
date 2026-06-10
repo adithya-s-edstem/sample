@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { CATEGORIES, type Category, type Expense, type ExpenseRequest } from '../../api/types'
 import { categoryLabel } from '../../lib/category'
+import { useFocusTrap } from '../../lib/useFocusTrap'
 
 /*
  * Add/Edit expense modal (P7-2), matching docs/wireframes/modal.html and the
@@ -101,6 +102,8 @@ function ExpenseModal({
   const dateId = useId()
   const categoryId = useId()
   const amountRef = useRef<HTMLInputElement>(null)
+  // Trap focus within the dialog and restore it to the trigger on close (P9-1).
+  const dialogRef = useFocusTrap<HTMLDivElement>()
 
   /*
    * Validation is derived from the live field values on every render, never
@@ -144,6 +147,7 @@ function ExpenseModal({
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

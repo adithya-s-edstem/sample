@@ -97,54 +97,57 @@ function ExpenseListSection({
         </button>
       </div>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="border-b border-line px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.04em] text-muted">
-              Date
-            </th>
-            <th className="border-b border-line px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.04em] text-muted">
-              Category
-            </th>
-            <th className="border-b border-line px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.04em] text-muted">
-              Amount
-            </th>
-            <th className="border-b border-line px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.04em] text-muted">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.isPending ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} aria-busy="true">
-                <td className="px-3 py-4" colSpan={4}>
-                  <Skeleton className="h-[18px] w-full" />
+      <div className="-mx-3 overflow-x-auto px-3">
+        <table className="w-full border-collapse">
+          <caption className="sr-only">Expenses for the selected period</caption>
+          <thead>
+            <tr>
+              <th className="border-b border-line px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.04em] text-muted">
+                Date
+              </th>
+              <th className="border-b border-line px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-[0.04em] text-muted">
+                Category
+              </th>
+              <th className="border-b border-line px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.04em] text-muted">
+                Amount
+              </th>
+              <th className="border-b border-line px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-[0.04em] text-muted">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.isPending ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} aria-busy="true">
+                  <td className="px-3 py-4" colSpan={4}>
+                    <Skeleton className="h-[18px] w-full" />
+                  </td>
+                </tr>
+              ))
+            ) : expenses.isError ? (
+              <tr>
+                <td className="px-3 py-2" colSpan={4}>
+                  <ErrorState
+                    error={expenses.error}
+                    onRetry={() => void expenses.refetch()}
+                    title="Couldn't load expenses"
+                  />
                 </td>
               </tr>
-            ))
-          ) : expenses.isError ? (
-            <tr>
-              <td className="px-3 py-2" colSpan={4}>
-                <ErrorState
-                  error={expenses.error}
-                  onRetry={() => void expenses.refetch()}
-                  title="Couldn't load expenses"
+            ) : (
+              expenses.data.content.map((expense) => (
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  onEdit={onEditExpense}
+                  onDelete={onDeleteExpense}
                 />
-              </td>
-            </tr>
-          ) : (
-            expenses.data.content.map((expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                onEdit={onEditExpense}
-                onDelete={onDeleteExpense}
-              />
-            ))
-          )}
-        </tbody>
-      </table>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }

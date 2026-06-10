@@ -1,5 +1,5 @@
 import type { Expense } from '../../api/types'
-import { categoryColor, categoryLabel } from '../../lib/category'
+import { categoryColor, categoryLabel, categoryPillTextColor } from '../../lib/category'
 import { formatINRExact } from '../../lib/money'
 import { expenseDateLabel } from '../../lib/month'
 
@@ -24,6 +24,7 @@ type ExpenseRowProps = {
 
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
   const color = categoryColor(expense.category)
+  const pillText = categoryPillTextColor(expense.category)
   const label = categoryLabel(expense.category)
 
   return (
@@ -32,7 +33,7 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       <td className="px-3 py-3">
         <span
           className="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold"
-          style={{ background: `${color}1a`, color }}
+          style={{ background: `${color}1a`, color: pillText }}
         >
           {label}
         </span>

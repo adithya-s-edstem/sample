@@ -31,7 +31,7 @@ function CategoryDonut({ data }: CategoryDonutProps) {
   }
 
   return (
-    <div className="flex items-center gap-7">
+    <div className="flex flex-wrap items-center gap-7">
       <PieChart width={SIZE} height={SIZE} role="img" aria-label="Spending by category">
         <Pie
           data={data.categories}
