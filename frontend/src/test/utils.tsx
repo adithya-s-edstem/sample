@@ -2,6 +2,8 @@ import { type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, renderHook, type RenderHookOptions } from '@testing-library/react'
 import { MonthProvider } from '../context/MonthContext.tsx'
+import { FilterProvider } from '../context/FilterContext.tsx'
+import type { FilterState } from '../context/filterContext'
 import type { Month } from '../lib/month'
 import type { ApiError } from '../api/types'
 
@@ -34,19 +36,25 @@ export function renderHookWithClient<Result, Props>(
 }
 
 /**
- * Renders a component inside a fresh QueryClientProvider + MonthProvider, the
- * two contexts every dashboard section depends on. `initialMonth` pins the
- * selected month so date-dependent assertions (e.g. the "June 2026" subtitle)
- * are deterministic regardless of when the suite runs.
+ * Renders a component inside a fresh QueryClientProvider + MonthProvider +
+ * FilterProvider — the contexts every dashboard section depends on.
+ * `initialMonth` pins the selected month so date-dependent assertions (e.g. the
+ * "June 2026" subtitle) are deterministic regardless of when the suite runs;
+ * `initialFilters` seeds the filter bar for filter-driven assertions (P8-1).
  */
 export function renderWithProviders(
   ui: ReactNode,
-  { initialMonth }: { initialMonth?: Month } = {},
+  {
+    initialMonth,
+    initialFilters,
+  }: { initialMonth?: Month; initialFilters?: Partial<FilterState> } = {},
 ) {
   const queryClient = createTestQueryClient()
   const wrapper = (
     <QueryClientProvider client={queryClient}>
-      <MonthProvider initialMonth={initialMonth}>{ui}</MonthProvider>
+      <MonthProvider initialMonth={initialMonth}>
+        <FilterProvider initialFilters={initialFilters}>{ui}</FilterProvider>
+      </MonthProvider>
     </QueryClientProvider>
   )
   return { ...render(wrapper), queryClient }

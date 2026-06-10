@@ -4,13 +4,17 @@ import ErrorState from '../layout/ErrorState'
 import EmptyState from './EmptyState'
 import ExpenseRow from './ExpenseRow'
 import { useMonth } from '../../context/monthContext'
+import { useFilters } from '../../context/filterContext'
+import { buildExpenseQuery } from '../../lib/filters'
 import { useExpenses } from '../../hooks'
 import type { Expense } from '../../api/types'
 
 /*
  * Expense list shell: section header with an Export CSV action and the table
  * header matching the wireframe. The list query is scoped to the selected month
- * (P5-3) via the `from`/`to` range from useMonth.
+ * (P5-3) via the `from`/`to` range from useMonth, and further refined by the
+ * filter bar (P8-1): the FilterProvider state (date range, category, amount
+ * range, search) is folded into the `GET /api/expenses` query params.
  *
  * P5-4 adds the loading/error states: while the query is pending, the table body
  * shows the wireframe's row skeletons (docs/wireframes/loading.html — five
@@ -43,7 +47,10 @@ function ExpenseListSection({
   onDeleteExpense,
 }: ExpenseListSectionProps) {
   const { range } = useMonth()
-  const expenses = useExpenses(range)
+  const { filters } = useFilters()
+  // P8-1: the filter bar folds into the list query — date range (defaulting to
+  // the selected month), category, amount range, and search.
+  const expenses = useExpenses(buildExpenseQuery(filters, range))
 
   // Successful fetch with no rows for the month → page-level empty prompt.
   if (expenses.isSuccess && expenses.data.content.length === 0) {

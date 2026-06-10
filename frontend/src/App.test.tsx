@@ -111,7 +111,10 @@ describe('App — Phase 7 exit: add/edit/delete update the dashboard live', () =
       expect(screen.queryByRole('heading', { name: 'Add Expense' })).not.toBeInTheDocument(),
     )
     await waitFor(() => expect(screen.getByText('9 Jun 2026')).toBeInTheDocument())
-    expect(screen.getByText('Transport')).toBeInTheDocument()
+    // Scope category text to the table — the filter bar's category dropdown also
+    // renders a "Transport" <option> (P8-1).
+    const addedTable = screen.getByRole('table')
+    expect(within(addedTable).getByText('Transport')).toBeInTheDocument()
     expect(screen.getByText('₹300.50')).toBeInTheDocument()
     // 1200 + 300.50 = 1500.50 in the "This Month" total.
     await waitFor(() => expect(screen.getByText('₹1,500.50')).toBeInTheDocument())
