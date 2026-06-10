@@ -63,6 +63,16 @@ export function isSameMonth(a: Month, b: Month): boolean {
 }
 
 /**
+ * Day-level display label for an expense's `date` (P7-1). The API speaks dates as
+ * `YYYY-MM-DD` calendar values; the expense table renders them as `d MMM yyyy`
+ * (e.g. `5 Jun 2026`), matching the dashboard wireframe. Parsed as a plain calendar
+ * date (no timezone) so the rendered day never shifts.
+ */
+export function expenseDateLabel(date: string): string {
+  return format(parse(date, 'yyyy-MM-dd', new Date()), 'd MMM yyyy')
+}
+
+/**
  * Short axis label for a trend bucket (P6-3). The backend returns `period` as a
  * `YYYY-MM-DD` calendar date for `day` granularity and `YYYY-MM` for `month`
  * (docs/api-contracts.md); we render the compact `MMM d` (e.g. `Jun 5`) or `MMM`

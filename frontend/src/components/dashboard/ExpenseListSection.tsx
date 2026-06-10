@@ -2,6 +2,7 @@ import Card from '../layout/Card'
 import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
 import EmptyState from './EmptyState'
+import ExpenseRow from './ExpenseRow'
 import { useMonth } from '../../context/monthContext'
 import { useExpenses } from '../../hooks'
 
@@ -18,8 +19,11 @@ import { useExpenses } from '../../hooks'
  * no expenses, the whole card becomes the friendly "No expenses this month"
  * prompt with an "Add your first expense" CTA (docs/wireframes/empty.html) — the
  * table header and Export action are hidden since there is nothing to list or
- * export. Rows and actions are rendered from this data in Phase 7 (P7-1); CSV
- * export hooks up in P8-3.
+ * export.
+ *
+ * P7-1 renders the real rows from the page content: each expense becomes an
+ * ExpenseRow (date, category pill, amount, edit/delete actions). The edit/delete
+ * handlers are wired in P7-2/P7-3/P7-4; CSV export hooks up in P8-3.
  */
 function ExpenseListSection() {
   const { range } = useMonth()
@@ -83,11 +87,9 @@ function ExpenseListSection() {
               </td>
             </tr>
           ) : (
-            <tr>
-              <td className="px-3 py-6 text-center text-sm text-muted" colSpan={4}>
-                Expense rows (Phase 7)
-              </td>
-            </tr>
+            expenses.data.content.map((expense) => (
+              <ExpenseRow key={expense.id} expense={expense} />
+            ))
           )}
         </tbody>
       </table>
