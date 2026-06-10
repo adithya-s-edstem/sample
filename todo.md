@@ -120,8 +120,8 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P9-4** Playwright E2E for key flows: add → dashboard updates; edit; delete + confirm; filter & search; month navigation + empty state; export CSV; loading/error + retry — Owner: Adithya
 - [x] **P9-5** Money/decimal precision suite (explicit): storage round-trip, aggregation/percentages, `0.01` accepted / `0` & negative rejected, CSV 2-decimal, FE display
 - [x] **P9-6** CI gates green: backend `mvnw verify` (unit + integration + JaCoCo); frontend `vitest run --coverage` + lint; Playwright suite. — Owner: Adithya
-- [ ] **P9-7** Update docs/README; finalize Docker Compose for full local run. While updating README, mention the fact that this was all done with subagents using a single prompt from prompt.txt on top. Also add a description to the github repo using gh cli.
-- [ ] **Exit:** v1 feature-complete, tested, runnable locally via documented steps
+- [x] **P9-7** Update docs/README; finalize Docker Compose for full local run. While updating README, mention the fact that this was all done with subagents using a single prompt from prompt.txt on top. Also add a description to the github repo using gh cli. — Owner: Adithya
+- [x] **Exit:** v1 feature-complete, tested, runnable locally via documented steps
 
 ---
 

@@ -1,15 +1,16 @@
 # Local development infrastructure for the Expense Tracker.
 #
-# Brings up PostgreSQL only — the backend (./mvnw spring-boot:run) and frontend
-# (npm run dev) run on the host against this DB. See docs/technical-architecture.md
-# §8–9 and docs/implementation-plan.md (Phase 0).
+# Brings up PostgreSQL only — the backend (./mvnw spring-boot:run) and the frontend
+# (npm run dev) run on the host against this DB, which is the documented full local
+# run (see README.md "Run it locally" and docs/technical-architecture.md §8-9). The
+# backend applies the Flyway schema on startup, so this is all the DB setup needed.
 #
 #   docker compose up -d        # start Postgres in the background
 #   docker compose down         # stop (data survives in the named volume)
 #   docker compose down -v      # stop and DROP the data volume
 #
-# All connection settings can be overridden via the environment (see the
-# defaults below), so application.yml (P0-4) can point at the same values.
+# All connection settings can be overridden via the environment (copy .env.example
+# to .env); the same defaults are baked into the backend's application.yml.
 
 services:
   postgres:
