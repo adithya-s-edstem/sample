@@ -12,7 +12,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 
 ## Phase 0 — Project Setup & Tooling
 
-- [ ] **P0-1** Create monorepo structure: `/backend` (Spring Boot), `/frontend` (Vite React), `/docs` (existing MD files)
+- [x] **P0-1** Create monorepo structure: `/backend` (Spring Boot), `/frontend` (Vite React), `/docs` (existing MD files)
 - [ ] **P0-2** Docker Compose for local Postgres (`expense-tracker` DB + persistence volume)
 - [ ] **P0-3** Scaffold backend via Spring Initializr: Web, Data JPA, Validation, PostgreSQL driver, Flyway, Testcontainers (Java 21, Spring Boot 3.x)
 - [ ] **P0-4** Configure `application.yml` (datasource, JPA, Flyway) with env-var overrides
