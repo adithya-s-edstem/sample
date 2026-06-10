@@ -144,6 +144,17 @@ describe('App — Phase 7 exit: add/edit/delete update the dashboard live', () =
     expect(screen.queryByText('₹1,200.00')).not.toBeInTheDocument()
   })
 
+  it('exposes a skip-to-content link and a main landmark for keyboard/AT users (P9-1)', async () => {
+    renderApp()
+    await waitFor(() => expect(screen.getByText('5 Jun 2026')).toBeInTheDocument())
+
+    // Skip link targets the main content region so keyboard users can bypass the header.
+    const skip = screen.getByRole('link', { name: 'Skip to content' })
+    expect(skip).toHaveAttribute('href', '#main-content')
+    const main = screen.getByRole('main')
+    expect(main).toHaveAttribute('id', 'main-content')
+  })
+
   it('deletes an expense after confirm: the row disappears and the empty state shows live', async () => {
     renderApp()
     await waitFor(() => expect(screen.getByText('5 Jun 2026')).toBeInTheDocument())
