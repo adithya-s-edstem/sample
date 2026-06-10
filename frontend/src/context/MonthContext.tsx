@@ -8,7 +8,7 @@
  * The context object and the `useMonth` hook live in ./monthContext (a non-
  * component module) so this file exports only a component.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import {
   currentMonth,
   monthLabel,
@@ -31,18 +31,25 @@ export function MonthProvider({ children, initialMonth }: MonthProviderProps) {
     initialMonth ? normalizeMonth(initialMonth) : currentMonth(),
   )
 
+  // Navigation callbacks use the functional updater and don't close over `month`,
+  // so they're stable for the provider's lifetime — no churn on month changes.
+  const setMonth = useCallback((next: Month) => setMonthState(normalizeMonth(next)), [])
+  const goToPreviousMonth = useCallback(() => setMonthState((m) => previousMonthOf(m)), [])
+  const goToNextMonth = useCallback(() => setMonthState((m) => nextMonthOf(m)), [])
+  const goToCurrentMonth = useCallback(() => setMonthState(currentMonth()), [])
+
   const value = useMemo<MonthContextValue>(() => {
     return {
       month,
       label: monthLabel(month),
       range: monthRange(month),
       isCurrentMonth: month.getTime() === currentMonth().getTime(),
-      setMonth: (next: Month) => setMonthState(normalizeMonth(next)),
-      goToPreviousMonth: () => setMonthState((m) => previousMonthOf(m)),
-      goToNextMonth: () => setMonthState((m) => nextMonthOf(m)),
-      goToCurrentMonth: () => setMonthState(currentMonth()),
+      setMonth,
+      goToPreviousMonth,
+      goToNextMonth,
+      goToCurrentMonth,
     }
-  }, [month])
+  }, [month, setMonth, goToPreviousMonth, goToNextMonth, goToCurrentMonth])
 
   return <MonthContext.Provider value={value}>{children}</MonthContext.Provider>
 }
