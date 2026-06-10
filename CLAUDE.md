@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is an **Expense Tracker** monorepo being built **backend-first** per `docs/implementation-plan.md` and tracked task-by-task in `todo.md`. The design documents under `docs/` are the **source of truth** — treat them as the spec; if you change a decision, update the relevant doc so the docs stay authoritative.
 
 **Build progress** (consult `todo.md` for the live state, not this paragraph):
-- **Backend** is built through **Phase 2** — JPA `Expense` entity + Flyway migration, repository (with Testcontainers integration tests), the full CRUD `ExpenseController`/`ExpenseService`, DTOs + mapper, Bean Validation, global exception handler, `GET /api/categories`, and contract tests against `docs/api-contracts.md`. Phases 3–4 (list/filter/pagination, the `/summary*` endpoints, CSV export) are **not yet built**.
+- **Backend** is built through **Phase 2** plus **P3-1** — JPA `Expense` entity + Flyway migration, repository (with Testcontainers integration tests), the full CRUD `ExpenseController`/`ExpenseService`, DTOs + mapper, Bean Validation, global exception handler, `GET /api/categories`, contract tests against `docs/api-contracts.md`, and the filtered/sorted/paginated `GET /api/expenses` list endpoint (current-month defaulting, `date,desc` default sort, size cap 200). The rest of Phases 3–4 (the `/summary*` endpoints, CSV export) are **not yet built**.
 - **Frontend** is **scaffolded only** (Vite + React 19 + TS, Tailwind v4, Recharts, TanStack Query, axios, date-fns, dev proxy). No feature code or test framework yet — that is Phases 5–9.
 
 The monorepo layout (established in **P0-1**) is:
