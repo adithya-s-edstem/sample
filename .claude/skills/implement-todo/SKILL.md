@@ -1,6 +1,6 @@
 ---
 name: implement-todo
-description: End-to-end implementation of a single assigned task from todo.md — gathers context (conventions, current coverage, requirements) via subagents, syncs main, branches, implements with tests per testing-plan.md, gets the diff code-reviewed by a subagent and fixes findings, makes atomic commits, pushes, and opens a PR. Use when the user says "implement P2-3", "work on todo P1-2", "pick up <todo id>", "do my assigned todo item", or hands you a task ID from todo.md to build.
+description: End-to-end implementation of a single assigned task from todo.md — gathers context (conventions, current coverage, requirements) via subagents, syncs main, branches, implements with tests per testing-plan.md, makes atomic commits, pushes, and opens a PR. Use when the user says "implement P2-3", "work on todo P1-2", "pick up <todo id>", "do my assigned todo item", or hands you a task ID from todo.md to build.
 ---
 
 # Implement a todo.md task
@@ -109,7 +109,8 @@ Run the relevant test command and confirm green before committing:
 
 - Backend: `./mvnw verify` (or `./mvnw test` for a faster inner loop).
 - Frontend: `npm run test` / `vitest run`.
-  Report real results — if tests fail, fix them or say so; never claim green when they aren't.
+
+Report real results — if tests fail, fix them or say so; never claim green when they aren't.
 
 ## Step 7 — Atomic commits
 
