@@ -86,6 +86,20 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void getMapsTimestampsIntoResponse() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id))
+                .thenReturn(
+                        Optional.of(persisted(id, new BigDecimal("50.00"), LocalDate.of(2026, 6, 1), Category.FOOD)));
+
+        ExpenseResponse response = service.get(id);
+
+        // createdAt/updatedAt must survive the entity→response mapping unchanged.
+        assertThat(response.createdAt()).isEqualTo(Instant.parse("2026-06-10T09:00:00Z"));
+        assertThat(response.updatedAt()).isEqualTo(Instant.parse("2026-06-10T09:00:00Z"));
+    }
+
+    @Test
     void getThrowsWhenMissing() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());

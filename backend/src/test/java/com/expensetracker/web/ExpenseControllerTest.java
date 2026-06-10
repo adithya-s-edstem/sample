@@ -3,6 +3,8 @@ package com.expensetracker.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -13,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.expensetracker.domain.Category;
+import com.expensetracker.service.ExpenseNotFoundException;
 import com.expensetracker.service.ExpenseService;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
@@ -116,5 +119,36 @@ class ExpenseControllerTest {
         mockMvc.perform(delete("/api/expenses/{id}", ID)).andExpect(status().isNoContent());
 
         verify(service).delete(ID);
+    }
+
+    @Test
+    void putReturns404WhenServiceReportsMissing() throws Exception {
+        when(service.update(eq(ID), any())).thenThrow(new ExpenseNotFoundException(ID));
+
+        mockMvc.perform(put("/api/expenses/{id}", ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":10.00,\"date\":\"2026-06-10\",\"category\":\"FOOD\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void putReturns400AndDoesNotReachServiceForInvalidBody() throws Exception {
+        // amount <= 0 fails @Valid before the controller delegates to the service.
+        mockMvc.perform(put("/api/expenses/{id}", ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":0,\"date\":\"2026-06-10\",\"category\":\"FOOD\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(service, never()).update(any(), any());
+    }
+
+    @Test
+    void deleteReturns404WhenServiceReportsMissing() throws Exception {
+        doThrow(new ExpenseNotFoundException(ID)).when(service).delete(ID);
+
+        mockMvc.perform(delete("/api/expenses/{id}", ID))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 }
