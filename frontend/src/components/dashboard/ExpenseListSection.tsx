@@ -5,6 +5,7 @@ import EmptyState from './EmptyState'
 import ExpenseRow from './ExpenseRow'
 import { useMonth } from '../../context/monthContext'
 import { useExpenses } from '../../hooks'
+import type { Expense } from '../../api/types'
 
 /*
  * Expense list shell: section header with an Export CSV action and the table
@@ -22,10 +23,18 @@ import { useExpenses } from '../../hooks'
  * export.
  *
  * P7-1 renders the real rows from the page content: each expense becomes an
- * ExpenseRow (date, category pill, amount, edit/delete actions). The edit/delete
- * handlers are wired in P7-2/P7-3/P7-4; CSV export hooks up in P8-3.
+ * ExpenseRow (date, category pill, amount, edit/delete actions). P7-3 wires the
+ * edit action and the empty-state CTA to the add/edit modal via `onEditExpense` /
+ * `onAddExpense` (state lives in App); delete (P7-4) and CSV export (P8-3) follow.
  */
-function ExpenseListSection() {
+type ExpenseListSectionProps = {
+  /** Opens the add-expense modal (header / empty-state CTA share this). */
+  onAddExpense?: () => void
+  /** Opens the edit modal pre-filled from the given expense. */
+  onEditExpense?: (expense: Expense) => void
+}
+
+function ExpenseListSection({ onAddExpense, onEditExpense }: ExpenseListSectionProps) {
   const { range } = useMonth()
   const expenses = useExpenses(range)
 
@@ -33,7 +42,7 @@ function ExpenseListSection() {
   if (expenses.isSuccess && expenses.data.content.length === 0) {
     return (
       <Card>
-        <EmptyState />
+        <EmptyState onAddExpense={onAddExpense} />
       </Card>
     )
   }
@@ -88,7 +97,7 @@ function ExpenseListSection() {
             </tr>
           ) : (
             expenses.data.content.map((expense) => (
-              <ExpenseRow key={expense.id} expense={expense} />
+              <ExpenseRow key={expense.id} expense={expense} onEdit={onEditExpense} />
             ))
           )}
         </tbody>

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { http, HttpResponse, delay } from 'msw'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, fireEvent } from '@testing-library/react'
 import ExpenseListSection from './ExpenseListSection'
 import { server } from '../../test/msw/server'
 import { sampleExpensePage } from '../../test/msw/handlers'
@@ -88,6 +88,36 @@ describe('ExpenseListSection — empty state (P6-4)', () => {
     expect(screen.getByText('₹300.00')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /^Edit expense/ })).toHaveLength(2)
     expect(screen.getAllByRole('button', { name: /^Delete expense/ })).toHaveLength(2)
+  })
+
+  it("fires onEditExpense with the row's expense when its edit action is clicked (P7-3)", async () => {
+    server.use(http.get('/api/expenses', () => HttpResponse.json(sampleExpensePage)))
+    const onEditExpense = vi.fn()
+
+    renderWithProviders(<ExpenseListSection onEditExpense={onEditExpense} />, {
+      initialMonth: JUNE_2026,
+    })
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^Edit expense/ })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /^Edit expense/ }))
+    expect(onEditExpense).toHaveBeenCalledWith(sampleExpensePage.content[0])
+  })
+
+  it('passes onAddExpense to the empty-state CTA (P7-3)', async () => {
+    server.use(http.get('/api/expenses', () => HttpResponse.json(emptyPage)))
+    const onAddExpense = vi.fn()
+
+    renderWithProviders(<ExpenseListSection onAddExpense={onAddExpense} />, {
+      initialMonth: JUNE_2026,
+    })
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Add your first expense' })).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Add your first expense' }))
+    expect(onAddExpense).toHaveBeenCalledTimes(1)
   })
 
   it('shows the row skeletons while /api/expenses is pending', () => {
