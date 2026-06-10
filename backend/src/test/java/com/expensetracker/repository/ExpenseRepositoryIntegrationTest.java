@@ -6,6 +6,7 @@ import com.expensetracker.TestcontainersConfiguration;
 import com.expensetracker.domain.Category;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.projection.CategorySummaryProjection;
+import com.expensetracker.repository.projection.TrendProjection;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -242,6 +243,74 @@ class ExpenseRepositoryIntegrationTest {
     @Test
     void summarizeByCategoryReturnsEmptyForRangeWithNoRows() {
         assertThat(repository.summarizeByCategory(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31)))
+                .isEmpty();
+    }
+
+    // --- summarizeTrendByDay / summarizeTrendByMonth (GET /api/summary/trend) --
+
+    @Test
+    void summarizeTrendByDayBucketsByDateFormatsKeyAndOrdersAscending() {
+        // June range: GROCERIES 50.00 on the 1st, FOOD 200.00 on the 15th,
+        // TRANSPORT 0.01 on the 30th — three distinct days, ascending.
+        List<TrendProjection> rows =
+                repository.summarizeTrendByDay(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0).getPeriod()).isEqualTo("2026-06-01");
+        assertThat(rows.get(0).getTotal()).isEqualByComparingTo("50.00");
+        assertThat(rows.get(1).getPeriod()).isEqualTo("2026-06-15");
+        assertThat(rows.get(1).getTotal()).isEqualByComparingTo("200.00");
+        assertThat(rows.get(2).getPeriod()).isEqualTo("2026-06-30");
+        assertThat(rows.get(2).getTotal()).isEqualByComparingTo("0.01");
+    }
+
+    @Test
+    void summarizeTrendByDaySumsMultipleRowsOnTheSameDateExactly() {
+        // Two FOOD rows on 2026-06-15 must collapse into one bucket summing exactly.
+        repository.save(new Expense(new BigDecimal("0.10"), LocalDate.of(2026, 6, 15), Category.OTHER));
+        repository.flush();
+
+        List<TrendProjection> rows =
+                repository.summarizeTrendByDay(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 6, 15));
+
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).getPeriod()).isEqualTo("2026-06-15");
+        // 200.00 + 0.10 = 200.10, exact (no float drift).
+        assertThat(rows.get(0).getTotal()).isEqualByComparingTo("200.10");
+    }
+
+    @Test
+    void summarizeTrendByMonthBucketsByYearMonthFormatsKeyAndOrdersAscending() {
+        // Full span: May FOOD 100.00, June (50.00 + 200.00 + 0.01 = 250.01),
+        // July RENT 1500.00 — three month buckets, ascending.
+        List<TrendProjection> rows =
+                repository.summarizeTrendByMonth(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+        assertThat(rows).hasSize(3);
+        assertThat(rows.get(0).getPeriod()).isEqualTo("2026-05");
+        assertThat(rows.get(0).getTotal()).isEqualByComparingTo("100.00");
+        assertThat(rows.get(1).getPeriod()).isEqualTo("2026-06");
+        assertThat(rows.get(1).getTotal()).isEqualByComparingTo("250.01");
+        assertThat(rows.get(2).getPeriod()).isEqualTo("2026-07");
+        assertThat(rows.get(2).getTotal()).isEqualByComparingTo("1500.00");
+    }
+
+    @Test
+    void summarizeTrendRespectsInclusiveRangeBounds() {
+        // [2026-06-01, 2026-06-30] includes the June rows and excludes May 31 / July 1.
+        List<TrendProjection> days =
+                repository.summarizeTrendByDay(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+
+        assertThat(days)
+                .extracting(TrendProjection::getPeriod)
+                .containsExactly("2026-06-01", "2026-06-15", "2026-06-30");
+    }
+
+    @Test
+    void summarizeTrendReturnsEmptyForRangeWithNoRows() {
+        assertThat(repository.summarizeTrendByDay(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31)))
+                .isEmpty();
+        assertThat(repository.summarizeTrendByMonth(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 12, 31)))
                 .isEmpty();
     }
 }

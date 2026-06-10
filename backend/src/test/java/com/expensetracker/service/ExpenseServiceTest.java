@@ -12,11 +12,15 @@ import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
+import com.expensetracker.repository.projection.TrendProjection;
 import com.expensetracker.web.dto.CategorySummaryResponse;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.Granularity;
 import com.expensetracker.web.dto.SummaryQuery;
 import com.expensetracker.web.dto.SummaryResponse;
+import com.expensetracker.web.dto.TrendQuery;
+import com.expensetracker.web.dto.TrendResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -316,5 +320,121 @@ class ExpenseServiceTest {
 
         assertThat(response.categories()).hasSize(1);
         assertThat(response.categories().get(0).percent()).isEqualByComparingTo("100.00");
+    }
+
+    // --- summaryTrend (GET /api/summary/trend) ---------------------------------
+
+    private static TrendProjection trendRow(String period, BigDecimal total) {
+        return new TrendProjection() {
+            @Override
+            public String getPeriod() {
+                return period;
+            }
+
+            @Override
+            public BigDecimal getTotal() {
+                return total;
+            }
+        };
+    }
+
+    @Test
+    void trendUsesDayBucketsAndDayQueryForASingleMonthRange() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeTrendByDay(from, to))
+                .thenReturn(List.of(
+                        trendRow("2026-06-01", new BigDecimal("100.00")),
+                        trendRow("2026-06-15", new BigDecimal("250.50"))));
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(from, to, null));
+
+        // Single-month range defaults to day granularity → the day query is used.
+        verify(repository).summarizeTrendByDay(from, to);
+        verify(repository, never()).summarizeTrendByMonth(any(), any());
+        assertThat(response.from()).isEqualTo(from);
+        assertThat(response.to()).isEqualTo(to);
+        assertThat(response.granularity()).isEqualTo(Granularity.DAY);
+        assertThat(response.points()).hasSize(2);
+        assertThat(response.points().get(0).period()).isEqualTo("2026-06-01");
+        assertThat(response.points().get(0).total()).isEqualByComparingTo("100.00");
+        assertThat(response.points().get(1).period()).isEqualTo("2026-06-15");
+        assertThat(response.points().get(1).total()).isEqualByComparingTo("250.50");
+    }
+
+    @Test
+    void trendUsesMonthBucketsAndMonthQueryForAMultiMonthRange() {
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeTrendByMonth(from, to))
+                .thenReturn(List.of(
+                        trendRow("2026-01", new BigDecimal("21000.00")),
+                        trendRow("2026-02", new BigDecimal("18750.00"))));
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(from, to, null));
+
+        verify(repository).summarizeTrendByMonth(from, to);
+        verify(repository, never()).summarizeTrendByDay(any(), any());
+        assertThat(response.granularity()).isEqualTo(Granularity.MONTH);
+        assertThat(response.points().get(0).period()).isEqualTo("2026-01");
+        assertThat(response.points().get(0).total()).isEqualByComparingTo("21000.00");
+    }
+
+    @Test
+    void trendHonoursExplicitGranularityOverDefault() {
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        // Multi-month range, but the caller forces day buckets.
+        when(repository.summarizeTrendByDay(from, to))
+                .thenReturn(List.of(trendRow("2026-01-05", new BigDecimal("10.00"))));
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(from, to, Granularity.DAY));
+
+        verify(repository).summarizeTrendByDay(from, to);
+        verify(repository, never()).summarizeTrendByMonth(any(), any());
+        assertThat(response.granularity()).isEqualTo(Granularity.DAY);
+    }
+
+    @Test
+    void trendDefaultsRangeToCurrentMonthWhenOmitted() {
+        YearMonth thisMonth = YearMonth.now();
+        LocalDate first = thisMonth.atDay(1);
+        LocalDate last = thisMonth.atEndOfMonth();
+        when(repository.summarizeTrendByDay(first, last))
+                .thenReturn(List.of(trendRow(first.toString(), new BigDecimal("5.00"))));
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(null, null, null));
+
+        // Current month → single-month range → day granularity and the day query.
+        verify(repository).summarizeTrendByDay(first, last);
+        assertThat(response.from()).isEqualTo(first);
+        assertThat(response.to()).isEqualTo(last);
+        assertThat(response.granularity()).isEqualTo(Granularity.DAY);
+    }
+
+    @Test
+    void trendNormalizesPointTotalsToTwoDecimalScale() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        // A SUM coming back with scale 0 must be normalized to scale 2 for the wire.
+        when(repository.summarizeTrendByDay(from, to)).thenReturn(List.of(trendRow("2026-06-01", new BigDecimal("0"))));
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(from, to, null));
+
+        assertThat(response.points().get(0).total()).isEqualByComparingTo("0.00");
+        assertThat(response.points().get(0).total().scale()).isEqualTo(2);
+    }
+
+    @Test
+    void trendReturnsEmptyPointsForEmptyPeriod() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeTrendByDay(from, to)).thenReturn(List.of());
+
+        TrendResponse response = service.summaryTrend(new TrendQuery(from, to, null));
+
+        // No buckets are fabricated for empty days — the series is simply empty.
+        assertThat(response.points()).isEmpty();
+        assertThat(response.granularity()).isEqualTo(Granularity.DAY);
     }
 }
