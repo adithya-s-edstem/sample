@@ -12,7 +12,7 @@
  * - Amounts are exact decimals on the wire (NUMERIC(12,2)); we parse the raw
  *   input to a finite number and omit anything non-numeric.
  */
-import type { ExpenseQuery } from '../api/types'
+import type { ExpenseQuery, SummaryQuery } from '../api/types'
 import type { FilterState } from '../context/filterContext'
 import type { MonthRange } from './month'
 
@@ -50,4 +50,20 @@ export function buildExpenseQuery(filters: FilterState, range: MonthRange): Expe
   if (q !== undefined) query.q = q
 
   return query
+}
+
+/**
+ * Builds the date-range scope (`SummaryQuery`) for the summary/chart endpoints
+ * (`/summary`, `/summary/by-category`, `/summary/trend`) from the same filter
+ * state and month range. Per docs/api-contracts.md §3, those endpoints only
+ * accept the `from`/`to` range (the category/amount/search filters are list-only),
+ * so the charts follow the selected date scope: the month range by default, or
+ * the explicit `from`/`to` filters when set (P8-2). Deriving this from the shared
+ * filter state alongside `buildExpenseQuery` keeps the list and charts in lockstep.
+ */
+export function buildSummaryQuery(filters: FilterState, range: MonthRange): SummaryQuery {
+  return {
+    from: trimOrUndefined(filters.from) ?? range.from,
+    to: trimOrUndefined(filters.to) ?? range.to,
+  }
 }

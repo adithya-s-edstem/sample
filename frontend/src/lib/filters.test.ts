@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildExpenseQuery } from './filters'
+import { buildExpenseQuery, buildSummaryQuery } from './filters'
 import { EMPTY_FILTERS, type FilterState } from '../context/filterContext'
 import type { MonthRange } from './month'
 
@@ -52,5 +52,39 @@ describe('buildExpenseQuery (P8-1)', () => {
   it('trims the search term and drops a whitespace-only search', () => {
     expect(buildExpenseQuery(filters({ q: '  coffee  ' }), JUNE).q).toBe('coffee')
     expect(buildExpenseQuery(filters({ q: '   ' }), JUNE).q).toBeUndefined()
+  })
+})
+
+describe('buildSummaryQuery (P8-2)', () => {
+  it('defaults the date range to the selected month when no date filter is set', () => {
+    expect(buildSummaryQuery(filters(), JUNE)).toEqual({ from: '2026-06-01', to: '2026-06-30' })
+  })
+
+  it('overrides the month range with explicit from/to filters', () => {
+    expect(buildSummaryQuery(filters({ from: '2026-06-10', to: '2026-06-20' }), JUNE)).toEqual({
+      from: '2026-06-10',
+      to: '2026-06-20',
+    })
+  })
+
+  it('overrides only the bound that is set', () => {
+    expect(buildSummaryQuery(filters({ from: '2026-06-15' }), JUNE)).toEqual({
+      from: '2026-06-15',
+      to: '2026-06-30',
+    })
+    expect(buildSummaryQuery(filters({ to: '2026-06-15' }), JUNE)).toEqual({
+      from: '2026-06-01',
+      to: '2026-06-15',
+    })
+  })
+
+  it('carries only the date range — category/amount/search are list-only per the API contract', () => {
+    // Summary endpoints (docs/api-contracts.md §3) accept only from/to; the
+    // other filter dimensions must not leak into the summary query.
+    const query = buildSummaryQuery(
+      filters({ category: 'TRANSPORT', minAmount: '100', maxAmount: '500', q: 'food' }),
+      JUNE,
+    )
+    expect(query).toEqual({ from: '2026-06-01', to: '2026-06-30' })
   })
 })
