@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>Expense Tracker — Loading State</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="brand">Expense Tracker</div>
+    <div class="header-right">
+      <div class="select">June 2026 <span class="chev">▼</span></div>
+      <button class="btn"><span class="plus">+</span> Add Expense</button>
+    </div>
+  </div>
+
+  <div class="grid summary-row">
+    <div class="card">
+      <p class="card-title">This Month</p>
+      <div class="sk sk-amount"></div>
+      <div class="sk sk-line" style="width:40%; margin-top:14px"></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Category Breakdown</p>
+      <div class="donut-wrap">
+        <div class="sk sk-donut"></div>
+        <div class="legend" style="flex:1">
+          <div class="sk sk-line" style="width:80%"></div>
+          <div class="sk sk-line" style="width:65%"></div>
+          <div class="sk sk-line" style="width:72%"></div>
+          <div class="sk sk-line" style="width:55%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-gap">
+    <p class="card-title">Spending Over Time</p>
+    <div class="sk sk-bar"></div>
+  </div>
+
+  <div class="card section-gap">
+    <p class="card-title">Expenses</p>
+    <div class="sk sk-row"></div>
+    <div class="sk sk-row"></div>
+    <div class="sk sk-row"></div>
+    <div class="sk sk-row"></div>
+    <div class="sk sk-row"></div>
+  </div>
+
+</div>
+</body>
+</html>

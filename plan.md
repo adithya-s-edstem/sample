@@ -9,7 +9,6 @@ Ask me for the content of each section and fill in the corresponding MD file.
 - Technical Architecture (Stack, Libraries, Data Storage) [done] - "technical-architecture.md"
 - Solution [done] - "solution.md"
 - API Contracts [done] - "api-contracts.md"
-- Wireframes
+- Wireframes [done] - "wireframes.md"
 - Implementation Plan
 - Testing Plan
-- Github Issues

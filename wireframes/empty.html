@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>Expense Tracker — Empty State</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="brand">Expense Tracker</div>
+    <div class="header-right">
+      <div class="select">June 2026 <span class="chev">▼</span></div>
+      <button class="btn"><span class="plus">+</span> Add Expense</button>
+    </div>
+  </div>
+
+  <div class="grid summary-row">
+    <div class="card">
+      <p class="card-title">This Month</p>
+      <div class="total-amount">₹0</div>
+      <div class="total-sub">No expenses yet · June 2026</div>
+    </div>
+    <div class="card">
+      <p class="card-title">Category Breakdown</p>
+      <div class="donut-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <g transform="rotate(-90 80 80)" fill="none" stroke-width="26">
+            <circle cx="80" cy="80" r="60" stroke="#eef0f3"></circle>
+          </g>
+          <text x="80" y="85" text-anchor="middle" font-size="13" fill="#9ca3af">No data</text>
+        </svg>
+        <div class="legend"><div class="muted" style="font-size:14px">Add an expense to see your category breakdown.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-gap">
+    <div class="empty">
+      <div class="emoji">🧾</div>
+      <h2>No expenses this month</h2>
+      <p>Start tracking where your money goes by adding your first expense.</p>
+      <button class="btn"><span class="plus">+</span> Add your first expense</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

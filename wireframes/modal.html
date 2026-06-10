@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>Expense Tracker — Add Expense</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="brand">Expense Tracker</div>
+    <div class="header-right">
+      <div class="select">June 2026 <span class="chev">▼</span></div>
+      <button class="btn"><span class="plus">+</span> Add Expense</button>
+    </div>
+  </div>
+
+  <div class="grid summary-row">
+    <div class="card">
+      <p class="card-title">This Month</p>
+      <div class="total-amount">₹24,500</div>
+      <div class="total-sub">42 expenses · June 2026</div>
+    </div>
+    <div class="card">
+      <p class="card-title">Category Breakdown</p>
+      <div class="donut-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <g transform="rotate(-90 80 80)" fill="none" stroke-width="26">
+            <circle cx="80" cy="80" r="60" stroke="#eef0f3"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#4f46e5" stroke-dasharray="184.7 192.3" stroke-dashoffset="0"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#06b6d4" stroke-dasharray="80 297" stroke-dashoffset="-184.7"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#f59e0b" stroke-dasharray="50.8 326.2" stroke-dashoffset="-264.7"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#10b981" stroke-dasharray="27.7 349.3" stroke-dashoffset="-315.5"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#ef4444" stroke-dasharray="18.5 358.5" stroke-dashoffset="-343.2"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#a78bfa" stroke-dasharray="15.4 361.6" stroke-dashoffset="-361.7"></circle>
+          </g>
+          <text x="80" y="76" text-anchor="middle" font-size="12" fill="#6b7280">Total</text>
+          <text x="80" y="95" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2430">₹24.5k</text>
+        </svg>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#4f46e5"></span> Rent</span><span class="legend-amt">₹12,000 · 49%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#06b6d4"></span> Groceries</span><span class="legend-amt">₹5,200 · 21%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#f59e0b"></span> Food</span><span class="legend-amt">₹3,300 · 13%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#10b981"></span> Transport</span><span class="legend-amt">₹1,800 · 7%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal overlay -->
+  <div class="overlay">
+    <div class="modal">
+      <h3>Add Expense</h3>
+      <p class="sub">Record where your money went.</p>
+
+      <div class="form-group">
+        <label class="label">Amount (₹)</label>
+        <input class="input amount-input" value="1,200.00">
+      </div>
+
+      <div class="form-group">
+        <label class="label">Date</label>
+        <input class="input" value="2026-06-10">
+      </div>
+
+      <div class="form-group">
+        <label class="label">Category</label>
+        <input class="input" value="Groceries ▼">
+        <div class="hint">Choose from predefined categories.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn secondary">Cancel</button>
+        <button class="btn">Save Expense</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

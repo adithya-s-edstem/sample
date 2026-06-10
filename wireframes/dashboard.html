@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1200">
+<title>Expense Tracker — Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">Expense Tracker</div>
+    <div class="header-right">
+      <div class="select">June 2026 <span class="chev">▼</span></div>
+      <button class="btn"><span class="plus">+</span> Add Expense</button>
+    </div>
+  </div>
+
+  <!-- Summary row -->
+  <div class="grid summary-row">
+    <div class="card">
+      <p class="card-title">This Month</p>
+      <div class="total-amount">₹24,500</div>
+      <div class="total-sub">42 expenses · June 2026</div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Category Breakdown</p>
+      <div class="donut-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <g transform="rotate(-90 80 80)" fill="none" stroke-width="26">
+            <circle cx="80" cy="80" r="60" stroke="#eef0f3"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#4f46e5" stroke-dasharray="184.7 192.3" stroke-dashoffset="0"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#06b6d4" stroke-dasharray="80 297" stroke-dashoffset="-184.7"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#f59e0b" stroke-dasharray="50.8 326.2" stroke-dashoffset="-264.7"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#10b981" stroke-dasharray="27.7 349.3" stroke-dashoffset="-315.5"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#ef4444" stroke-dasharray="18.5 358.5" stroke-dashoffset="-343.2"></circle>
+            <circle cx="80" cy="80" r="60" stroke="#a78bfa" stroke-dasharray="15.4 361.6" stroke-dashoffset="-361.7"></circle>
+          </g>
+          <text x="80" y="76" text-anchor="middle" font-size="12" fill="#6b7280">Total</text>
+          <text x="80" y="95" text-anchor="middle" font-size="16" font-weight="700" fill="#1f2430">₹24.5k</text>
+        </svg>
+
+        <div class="legend">
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#4f46e5"></span> Rent</span><span class="legend-amt">₹12,000 · 49%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#06b6d4"></span> Groceries</span><span class="legend-amt">₹5,200 · 21%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#f59e0b"></span> Food</span><span class="legend-amt">₹3,300 · 13%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#10b981"></span> Transport</span><span class="legend-amt">₹1,800 · 7%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#ef4444"></span> Utilities</span><span class="legend-amt">₹1,200 · 5%</span></div>
+          <div class="legend-item"><span class="legend-row"><span class="dot" style="background:#a78bfa"></span> Other</span><span class="legend-amt">₹1,000 · 4%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend -->
+  <div class="card section-gap">
+    <p class="card-title">Spending Over Time</p>
+    <svg width="100%" height="220" viewBox="0 0 720 220" preserveAspectRatio="none">
+      <!-- gridlines -->
+      <g stroke="#eef0f3" stroke-width="1">
+        <line x1="0" y1="40" x2="720" y2="40"></line>
+        <line x1="0" y1="90" x2="720" y2="90"></line>
+        <line x1="0" y1="140" x2="720" y2="140"></line>
+        <line x1="0" y1="190" x2="720" y2="190"></line>
+      </g>
+      <!-- bars (max 24500 -> 150px) -->
+      <g fill="#4f46e5">
+        <rect x="40"  y="62"  width="70" height="128" rx="6"></rect>
+        <rect x="155" y="76"  width="70" height="114" rx="6"></rect>
+        <rect x="270" y="49"  width="70" height="141" rx="6"></rect>
+        <rect x="385" y="69"  width="70" height="121" rx="6"></rect>
+        <rect x="500" y="53"  width="70" height="137" rx="6"></rect>
+        <rect x="615" y="40"  width="70" height="150" rx="6"></rect>
+      </g>
+      <g fill="#6b7280" font-size="13" text-anchor="middle">
+        <text x="75"  y="210">Jan</text>
+        <text x="190" y="210">Feb</text>
+        <text x="305" y="210">Mar</text>
+        <text x="420" y="210">Apr</text>
+        <text x="535" y="210">May</text>
+        <text x="650" y="210">Jun</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <span class="field">📅 Jun 1 – Jun 30, 2026</span>
+    <span class="field">Category: All ▼</span>
+    <span class="field">₹ Min – Max</span>
+    <span class="field search">⌕ Search expenses</span>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <div class="list-head">
+      <p class="card-title" style="margin:0">Expenses</p>
+      <button class="btn secondary">⬇ Export CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Category</th><th class="amount-col">Amount</th><th class="row-actions">Actions</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10 Jun 2026</td><td><span class="cat-pill">Groceries</span></td><td class="amount-col">₹1,200.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+        <tr><td>09 Jun 2026</td><td><span class="cat-pill">Transport</span></td><td class="amount-col">₹300.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+        <tr><td>08 Jun 2026</td><td><span class="cat-pill">Food</span></td><td class="amount-col">₹450.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+        <tr><td>05 Jun 2026</td><td><span class="cat-pill">Rent</span></td><td class="amount-col">₹12,000.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+        <tr><td>03 Jun 2026</td><td><span class="cat-pill">Utilities</span></td><td class="amount-col">₹1,200.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+        <tr><td>02 Jun 2026</td><td><span class="cat-pill">Food</span></td><td class="amount-col">₹620.00</td><td class="row-actions"><button class="icon-btn">✎</button><button class="icon-btn">🗑</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
