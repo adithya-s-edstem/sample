@@ -15,7 +15,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P0-1** Create monorepo structure: `/backend` (Spring Boot), `/frontend` (Vite React), `/docs` (existing MD files)
 - [x] **P0-2** Docker Compose for local Postgres (`expense-tracker` DB + persistence volume)
 - [x] **P0-3** Scaffold backend via Spring Initializr: Web, Data JPA, Validation, PostgreSQL driver, Flyway, Testcontainers (Java 21, Spring Boot 3.x)
-- [ ] **P0-4** Configure `application.yml` (datasource, JPA, Flyway) with env-var overrides
+- [x] **P0-4** Configure `application.yml` (datasource, JPA, Flyway) with env-var overrides
 - [ ] **P0-5** Scaffold frontend via Vite (React + TS); add Tailwind, Recharts, TanStack Query, axios, date-fns
 - [ ] **P0-6** Configure Vite dev proxy `/api` → backend; configure backend CORS for dev origin
 - [ ] **P0-7** Tooling: ESLint + Prettier (frontend); Spotless/Checkstyle optional (backend)
