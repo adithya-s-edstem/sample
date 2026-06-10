@@ -82,7 +82,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 
 ## Phase 6 — Dashboard & Charts
 
-- [ ] **P6-1** "This Month" total card
+- [x] **P6-1** "This Month" total card — Owner: Adithya
 - [ ] **P6-2** Category donut (Recharts) from `/summary/by-category` + legend
 - [ ] **P6-3** Spending trend (Recharts bar/line) from `/summary/trend`
 - [ ] **P6-4** Empty state (no expenses) per `docs/wireframes/empty.html`

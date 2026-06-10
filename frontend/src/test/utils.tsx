@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, type RenderHookOptions } from '@testing-library/react'
+import { render, renderHook, type RenderHookOptions } from '@testing-library/react'
+import { MonthProvider } from '../context/MonthContext.tsx'
+import type { Month } from '../lib/month'
 import type { ApiError } from '../api/types'
 
 /*
@@ -29,6 +31,25 @@ export function renderHookWithClient<Result, Props>(
   )
   const view = renderHook(hook, { wrapper, ...options })
   return { ...view, queryClient }
+}
+
+/**
+ * Renders a component inside a fresh QueryClientProvider + MonthProvider, the
+ * two contexts every dashboard section depends on. `initialMonth` pins the
+ * selected month so date-dependent assertions (e.g. the "June 2026" subtitle)
+ * are deterministic regardless of when the suite runs.
+ */
+export function renderWithProviders(
+  ui: ReactNode,
+  { initialMonth }: { initialMonth?: Month } = {},
+) {
+  const queryClient = createTestQueryClient()
+  const wrapper = (
+    <QueryClientProvider client={queryClient}>
+      <MonthProvider initialMonth={initialMonth}>{ui}</MonthProvider>
+    </QueryClientProvider>
+  )
+  return { ...render(wrapper), queryClient }
 }
 
 /** Builds the backend's uniform error body for MSW error-case handlers. */
