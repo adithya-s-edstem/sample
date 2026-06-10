@@ -128,7 +128,8 @@ class ExpenseControllerTest {
         mockMvc.perform(put("/api/expenses/{id}", ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"amount\":10.00,\"date\":\"2026-06-10\",\"category\":\"FOOD\"}"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
@@ -146,6 +147,8 @@ class ExpenseControllerTest {
     void deleteReturns404WhenServiceReportsMissing() throws Exception {
         doThrow(new ExpenseNotFoundException(ID)).when(service).delete(ID);
 
-        mockMvc.perform(delete("/api/expenses/{id}", ID)).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/expenses/{id}", ID))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 }
