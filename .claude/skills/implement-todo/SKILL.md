@@ -1,6 +1,6 @@
 ---
 name: implement-todo
-description: End-to-end implementation of a single assigned task from todo.md — gathers context (conventions, current coverage, requirements) via subagents, syncs main, branches, implements with tests per testing-plan.md, makes atomic commits, pushes, and opens a PR. Use when the user says "implement P2-3", "work on todo P1-2", "pick up <todo id>", "do my assigned todo item", or hands you a task ID from todo.md to build.
+description: End-to-end implementation of a single assigned task from todo.md — gathers context (conventions, current coverage, requirements) via subagents, syncs main, branches, implements with tests per testing-plan.md, gets the diff code-reviewed by a subagent and fixes findings, makes atomic commits, pushes, and opens a PR. Use when the user says "implement P2-3", "work on todo P1-2", "pick up <todo id>", "do my assigned todo item", or hands you a task ID from todo.md to build.
 ---
 
 # Implement a todo.md task
@@ -103,7 +103,30 @@ Run the relevant test command and confirm green before committing:
 - Frontend: `npm run test` / `vitest run`.
 Report real results — if tests fail, fix them or say so; never claim green when they aren't.
 
-## Step 7 — Atomic commits
+## Step 7 — Code review via subagent
+
+Before committing, have a subagent review the work with fresh eyes. Launch **one** Agent
+(general-purpose) with a prompt like:
+
+> "Review the uncommitted changes in this repo (`git diff main` / `git status`) implementing
+> todo task `<id>: <task text>`. Check for: (1) correctness bugs and missed edge cases;
+> (2) violations of the repo's binding conventions — exact-decimal money
+> (`BigDecimal`/`NUMERIC(12,2)`, never floats), API base path `/api`, UUID string IDs,
+> `YYYY-MM-DD` dates / ISO-8601 UTC timestamps, the fixed `Category` enum, the uniform error
+> shape, current-month defaulting; (3) divergence from `docs/api-contracts.md` (endpoints,
+> DTOs, status codes, error bodies must match exactly); (4) missing or weak tests relative to
+> `docs/testing-plan.md`. Do NOT edit any files. Return a numbered list of findings, each with
+> file:line, severity (blocker/should-fix/nit), and a concrete suggested fix. If the diff is
+> clean, say so explicitly."
+
+The subagent must be **read-only** — you apply the fixes, not the reviewer. Then:
+- Fix every **blocker** and **should-fix**; use judgment on nits.
+- Re-run the relevant tests after fixes (back to Step 6's commands) and confirm green.
+- If the reviewer flags a genuine spec/doc conflict, surface it to the user rather than
+  silently picking a side.
+- Briefly relay the review outcome to the user (findings count, what was fixed, what was skipped and why).
+
+## Step 8 — Atomic commits
 
 Commit in small, independently revertible units (each commit builds and is self-contained), e.g.:
 1. schema/entity/scaffolding
@@ -115,13 +138,13 @@ Use clear messages referencing the task ID, e.g. `P2-3: add ExpenseController CR
 Stage deliberately (`git add <paths>`) — don't blanket-commit unrelated files. Do not amend;
 prefer new commits. Don't add co-author/attribution lines unless the user asks.
 
-## Step 8 — Push
+## Step 9 — Push
 
 ```
 git push -u origin todo-p2-3
 ```
 
-## Step 9 — Open a PR
+## Step 10 — Open a PR
 
 Use `gh pr create`. Base = `main`, head = the work branch. Title: `<task id>: <short summary>`.
 Body should include:
@@ -137,7 +160,7 @@ gh pr create --base main --head todo-p2-3 --title "P2-3: ExpenseController CRUD 
 ```
 Return the PR URL to the user.
 
-## Step 10 — Offer to check off the task
+## Step 11 — Offer to check off the task
 
 Ask whether to tick the task's checkbox in `todo.md` (`- [ ]` → `- [x]`) and note the Owner.
 Only do this if the user confirms; commit it as part of the PR branch if so.
