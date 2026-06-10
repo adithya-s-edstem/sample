@@ -86,6 +86,32 @@ public class ExpenseService {
     }
 
     /**
+     * All expenses matching the export query ({@code GET /api/expenses/export},
+     * P4-1), in response-DTO form ready for CSV rendering.
+     *
+     * <p>Applies the <b>same filters and ordering as the list</b> (date range with
+     * the contract's current-month defaulting, category, amount range, {@code
+     * date,desc} default sort) via {@link ExpenseQuery} and
+     * {@link ExpenseSpecifications}, but <b>without pagination</b> — every match is
+     * returned. Money stays exact decimal end to end (entity {@code BigDecimal} →
+     * {@link ExpenseResponse}); the caller renders it at scale 2.
+     */
+    @Transactional(readOnly = true)
+    public List<ExpenseResponse> export(ExpenseQuery query) {
+        LocalDate today = LocalDate.now();
+        Specification<Expense> spec = Specification.allOf(
+                ExpenseSpecifications.dateFrom(query.resolvedFrom(today)),
+                ExpenseSpecifications.dateTo(query.resolvedTo(today)),
+                ExpenseSpecifications.hasCategory(query.resolvedCategory()),
+                ExpenseSpecifications.minAmount(query.minAmount()),
+                ExpenseSpecifications.maxAmount(query.maxAmount()));
+
+        return repository.findAll(spec, query.toSort()).stream()
+                .map(ExpenseMapper::toResponse)
+                .toList();
+    }
+
+    /**
      * Headline summary (total + count) for a period ({@code GET /api/summary}).
      *
      * <p>Resolves the date range via {@link SummaryQuery} (current month when

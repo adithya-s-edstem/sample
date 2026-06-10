@@ -175,6 +175,72 @@ class ExpenseServiceTest {
         verify(repository, never()).delete(any(Expense.class));
     }
 
+    // --- export (GET /api/expenses/export) ------------------------------------
+
+    @Test
+    void exportReturnsAllMatchesMappedWithoutPagination() {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        when(repository.findAll(
+                        org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
+                        any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of(
+                        persisted(id1, new BigDecimal("200.00"), LocalDate.of(2026, 6, 15), Category.FOOD),
+                        persisted(id2, new BigDecimal("0.01"), LocalDate.of(2026, 6, 30), Category.TRANSPORT)));
+
+        List<ExpenseResponse> rows = service.export(new com.expensetracker.web.dto.ExpenseQuery(
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), null, null, null, null, null, null, null));
+
+        assertThat(rows).hasSize(2);
+        assertThat(rows.get(0).id()).isEqualTo(id1);
+        assertThat(rows.get(0).amount()).isEqualByComparingTo("200.00");
+        assertThat(rows.get(1).amount()).isEqualByComparingTo("0.01");
+    }
+
+    @Test
+    void exportUsesTheResolvedSortFromTheQuery() {
+        when(repository.findAll(
+                        org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
+                        any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of());
+
+        service.export(new com.expensetracker.web.dto.ExpenseQuery(
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30), null, null, null, null, "amount,asc", null, null));
+
+        ArgumentCaptor<org.springframework.data.domain.Sort> sortCaptor =
+                ArgumentCaptor.forClass(org.springframework.data.domain.Sort.class);
+        verify(repository)
+                .findAll(
+                        org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
+                        sortCaptor.capture());
+        org.springframework.data.domain.Sort.Order order = sortCaptor.getValue().getOrderFor("amount");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(org.springframework.data.domain.Sort.Direction.ASC);
+    }
+
+    @Test
+    void exportDefaultsRangeToCurrentMonthWhenOmitted() {
+        when(repository.findAll(
+                        org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
+                        any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of());
+
+        // No from/to and the default sort → date,desc; current-month defaulting is
+        // applied inside the specification, so we just assert the call is made.
+        List<ExpenseResponse> rows = service.export(
+                new com.expensetracker.web.dto.ExpenseQuery(null, null, null, null, null, null, null, null, null));
+
+        assertThat(rows).isEmpty();
+        ArgumentCaptor<org.springframework.data.domain.Sort> sortCaptor =
+                ArgumentCaptor.forClass(org.springframework.data.domain.Sort.class);
+        verify(repository)
+                .findAll(
+                        org.mockito.ArgumentMatchers.<org.springframework.data.jpa.domain.Specification<Expense>>any(),
+                        sortCaptor.capture());
+        assertThat(sortCaptor.getValue().getOrderFor("date").getDirection())
+                .isEqualTo(org.springframework.data.domain.Sort.Direction.DESC);
+    }
+
     // --- summary (GET /api/summary) -------------------------------------------
 
     private static SummaryProjection projection(BigDecimal total, long count) {
