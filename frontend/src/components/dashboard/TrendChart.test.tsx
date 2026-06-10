@@ -63,4 +63,25 @@ describe('TrendChart (P6-3)', () => {
     expect(screen.getByText('No spending this month.')).toBeInTheDocument()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
+
+  it('renders the chart (not the empty message) when buckets exist but every total is zero', () => {
+    // Zero state vs. empty state: the period has buckets, just no spend in them
+    // (a real /summary/trend payload for a fully-zero range). The chart still
+    // draws — labelled axis + a bar per bucket at zero height — rather than
+    // collapsing to the "No spending" message, which is reserved for `points: []`.
+    const allZero: TrendResponse = {
+      from: '2026-06-01',
+      to: '2026-06-30',
+      granularity: 'day',
+      points: [
+        { period: '2026-06-05', total: 0 },
+        { period: '2026-06-12', total: 0 },
+      ],
+    }
+    render(<TrendChart data={allZero} />)
+    expect(screen.getByRole('img', { name: 'Spending over time' })).toBeInTheDocument()
+    expect(screen.queryByText('No spending this month.')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Jun 5').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Jun 12').length).toBeGreaterThan(0)
+  })
 })
