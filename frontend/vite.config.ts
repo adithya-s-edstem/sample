@@ -27,6 +27,11 @@ export default defineConfig({
     environment: 'jsdom',
     pool: 'threads',
     setupFiles: ['./src/test/setup.ts'],
+    // Vitest owns the jsdom unit/component suite under src/. The Playwright E2E
+    // specs under e2e/ run in a real browser via `npm run test:e2e` (P9-4), so
+    // keep them out of the Vitest run.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     css: false,
     // jsdom transform/import is heavy; under full-suite parallelism even simple
     // render-only tests can exceed Vitest's 5s default. Give each test more
