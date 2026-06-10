@@ -19,7 +19,7 @@ implementation: /implement-todo for the todo number following the rules.
 exit_check: If an exit check is provided, investigate, mark it as complete if the checks pass.
 </task>
 <task>
-Once the PR is raised follow pr-steps.
+pr: Once the PR is raised follow pr-steps.
 </task>
 </tasks>
 
@@ -40,9 +40,9 @@ don't ask me for anything.
 <return>
 Once the task is completed, the agent should return the following json
 <code>
-{implementation: "done|failed", exit_check: "done|failed"}
+{implementation: "done|failed", exit_check: "done|failed|not_provided", pr: "done|failed"}
 </code>
 </return>
 </subagent-prompt>
 
-Only take the next item after the agent returns {implementation: "done", exit_check: "done"}. If it returns either implementation or exit_check as failed, stop.
+Only take the next item after the agent returns {implementation: "done", exit_check: "done|not_provided", pr: "done"}. If it returns either implementation, pr or exit_check as failed, stop.
