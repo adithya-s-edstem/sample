@@ -1,14 +1,23 @@
-// Placeholder shell — the real layout, theme, and routing land in P5-1.
-// Kept intentionally minimal so `npm run dev` / `npm run build` succeed and
-// Tailwind is verified to be wired up.
+import Header from './components/layout/Header'
+import SummaryRow from './components/dashboard/SummaryRow'
+import TrendSection from './components/dashboard/TrendSection'
+import FilterBar from './components/dashboard/FilterBar'
+import ExpenseListSection from './components/dashboard/ExpenseListSection'
+
+/*
+ * App shell (P5-1): the single scrollable page from docs/solution.md, themed to
+ * match the wireframes. Each region is a structural placeholder; live data,
+ * month state, charts, the table, and the modal arrive in P5-2 through P8.
+ */
 function App() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight">Expense Tracker</h1>
-        <p className="mt-2 text-slate-600">
-          Frontend scaffold ready (Vite + React + TS + Tailwind). UI is built out from Phase 5.
-        </p>
+    <main className="min-h-screen bg-bg text-ink">
+      <div className="mx-auto max-w-[1200px] px-8 pt-7 pb-14">
+        <Header />
+        <SummaryRow />
+        <TrendSection />
+        <FilterBar />
+        <ExpenseListSection />
       </div>
     </main>
   )

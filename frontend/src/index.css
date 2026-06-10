@@ -1,3 +1,31 @@
 @import 'tailwindcss';
 
-/* App shell, theme, and wireframe-matching styles arrive in P5-1. */
+/*
+ * Theme tokens mirror the wireframe mockups (docs/wireframes/styles.css) so the
+ * React app matches the agreed clean/minimal design. Tailwind v4 exposes these
+ * as utilities (e.g. bg-card, text-ink, border-line, text-accent, rounded-card).
+ */
+@theme {
+  --color-bg: #f7f7f8;
+  --color-card: #ffffff;
+  --color-ink: #1f2430;
+  --color-muted: #6b7280;
+  --color-line: #e7e8ec;
+  --color-accent: #4f46e5;
+  --color-accent-soft: #eef2ff;
+
+  --radius-card: 14px;
+
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.05);
+
+  --font-sans: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
