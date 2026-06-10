@@ -2,6 +2,8 @@ package com.expensetracker.web;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -203,6 +205,72 @@ class ReadApiIntegrationTest {
                 .andExpect(jsonPath("$.totalElements").value(0))
                 .andExpect(jsonPath("$.totalPages").value(0))
                 .andExpect(jsonPath("$.sort").value("date,desc"));
+    }
+
+    // --- GET /api/expenses/export — CSV, same filters, no pagination ----------
+
+    @Test
+    void exportReturnsCsvForTheFilteredRangeWithHeadersAndNoPagination() throws Exception {
+        seedThreeMonths();
+
+        // June bracket [01,30] excludes May 31 and Jul 01; default sort date,desc.
+        // No page/size: every match is exported as CSV rows under the header.
+        String body = mockMvc.perform(
+                        get("/api/expenses/export").param("from", JUNE_FROM).param("to", JUNE_TO))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(header().string(
+                                "Content-Disposition",
+                                org.hamcrest.Matchers.startsWith("attachment; filename=\"expenses-")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String[] lines = body.split("\r\n");
+        // Header + the three June rows, date,desc → 06-30, 06-15, 06-01.
+        org.assertj.core.api.Assertions.assertThat(lines).hasSize(4);
+        org.assertj.core.api.Assertions.assertThat(lines[0]).isEqualTo("id,date,category,amount");
+        org.assertj.core.api.Assertions.assertThat(lines[1]).endsWith("2026-06-30,TRANSPORT,0.01");
+        org.assertj.core.api.Assertions.assertThat(lines[2]).endsWith("2026-06-15,FOOD,200.00");
+        org.assertj.core.api.Assertions.assertThat(lines[3]).endsWith("2026-06-01,GROCERIES,50.00");
+    }
+
+    @Test
+    void exportAppliesCategoryFilterAcrossTheWholeSpanIgnoringPageSize() throws Exception {
+        seedThreeMonths();
+
+        // Wide range + category FOOD → the May 31 and Jun 15 rows, sorted amount,asc.
+        // A tiny size param must be ignored (export never paginates): both rows appear.
+        String body = mockMvc.perform(get("/api/expenses/export")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-12-31")
+                        .param("category", "FOOD")
+                        .param("sort", "amount,asc")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String[] lines = body.split("\r\n");
+        org.assertj.core.api.Assertions.assertThat(lines).hasSize(3);
+        org.assertj.core.api.Assertions.assertThat(lines[1]).endsWith("2026-05-31,FOOD,100.00");
+        org.assertj.core.api.Assertions.assertThat(lines[2]).endsWith("2026-06-15,FOOD,200.00");
+    }
+
+    @Test
+    void exportReturnsHeaderOnlyForAnEmptyMonth() throws Exception {
+        seedThreeMonths();
+
+        String body = mockMvc.perform(
+                        get("/api/expenses/export").param("from", "2030-01-01").param("to", "2030-01-31"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(body).isEqualTo("id,date,category,amount\r\n");
     }
 
     // --- GET /api/summary -----------------------------------------------------

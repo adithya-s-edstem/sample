@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -142,6 +144,47 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses").param("category", "NOPE"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void exportReturnsCsvWithHeadersAndDelegatesParsedQuery() throws Exception {
+        ExpenseResponse row = sampleResponse(new BigDecimal("1200.00"), LocalDate.of(2026, 6, 10), Category.GROCERIES);
+        when(service.export(any())).thenReturn(List.of(row));
+
+        mockMvc.perform(get("/api/expenses/export")
+                        .param("from", "2026-06-01")
+                        .param("to", "2026-06-30")
+                        .param("category", "GROCERIES")
+                        .param("minAmount", "100"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(header().string(
+                                "Content-Disposition",
+                                org.hamcrest.Matchers.startsWith("attachment; filename=\"expenses-")))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.endsWith(".csv\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.startsWith("id,date,category,amount")))
+                .andExpect(
+                        content().string(org.hamcrest.Matchers.containsString(ID + ",2026-06-10,GROCERIES,1200.00")));
+
+        ArgumentCaptor<ExpenseQuery> captor = ArgumentCaptor.forClass(ExpenseQuery.class);
+        verify(service).export(captor.capture());
+        ExpenseQuery q = captor.getValue();
+        assertThat(q.from()).isEqualTo(LocalDate.of(2026, 6, 1));
+        assertThat(q.to()).isEqualTo(LocalDate.of(2026, 6, 30));
+        assertThat(q.category()).isEqualTo(Category.GROCERIES);
+        assertThat(q.minAmount()).isEqualByComparingTo("100");
+        // Export never paginates — page/size are not bound.
+        assertThat(q.page()).isNull();
+        assertThat(q.size()).isNull();
+    }
+
+    @Test
+    void exportReturns400ForMalformedDateParam() throws Exception {
+        mockMvc.perform(get("/api/expenses/export").param("from", "2026-13-40"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+
+        verify(service, never()).export(any());
     }
 
     @Test
