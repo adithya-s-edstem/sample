@@ -8,7 +8,9 @@ describe('formatINR', () => {
   })
 
   it('uses lakh/crore grouping for large amounts', () => {
+    expect(formatINR(1000)).toBe('₹1,000')
     expect(formatINR(100000)).toBe('₹1,00,000')
+    expect(formatINR(10000000)).toBe('₹1,00,00,000')
     expect(formatINR(12345678)).toBe('₹1,23,45,678')
   })
 
@@ -33,6 +35,13 @@ describe('formatINRExact', () => {
     expect(formatINRExact(1234.5)).toBe('₹1,234.50')
     expect(formatINRExact(0.01)).toBe('₹0.01')
     expect(formatINRExact(1200000)).toBe('₹12,00,000.00')
+  })
+
+  it('keeps lakh/crore grouping on paise-bearing large amounts (no scientific notation)', () => {
+    expect(formatINRExact(9999999.99)).toBe('₹99,99,999.99')
+    const formatted = formatINRExact(123456789.5)
+    expect(formatted).toBe('₹12,34,56,789.50')
+    expect(formatted).not.toMatch(/[eE]/)
   })
 })
 
