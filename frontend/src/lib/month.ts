@@ -9,7 +9,8 @@
  * defaulting contract (docs/api-contracts.md): `from` = first day, `to` = last day
  * of the month, both as calendar dates with no time component.
  */
-import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns'
+import { addMonths, endOfMonth, format, parse, startOfMonth } from 'date-fns'
+import type { Granularity } from '../api/types'
 
 /** A selected month, normalized to the first day of that month (local time). */
 export type Month = Date
@@ -59,4 +60,18 @@ export function nextMonth(month: Month): Month {
 /** True when two `Month`s refer to the same calendar month. */
 export function isSameMonth(a: Month, b: Month): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+}
+
+/**
+ * Short axis label for a trend bucket (P6-3). The backend returns `period` as a
+ * `YYYY-MM-DD` calendar date for `day` granularity and `YYYY-MM` for `month`
+ * (docs/api-contracts.md); we render the compact `MMM d` (e.g. `Jun 5`) or `MMM`
+ * (e.g. `Jun`) labels the wireframe uses on the x-axis. Periods are parsed as
+ * plain calendar values (no timezone), matching how the API speaks dates.
+ */
+export function trendPointLabel(period: string, granularity: Granularity): string {
+  if (granularity === 'month') {
+    return format(parse(period, 'yyyy-MM', new Date()), 'MMM')
+  }
+  return format(parse(period, 'yyyy-MM-dd', new Date()), 'MMM d')
 }

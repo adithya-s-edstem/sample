@@ -1,6 +1,7 @@
 import Card from '../layout/Card'
 import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
+import TrendChart from './TrendChart'
 import { useMonth } from '../../context/monthContext'
 import { useSummaryTrend } from '../../hooks'
 
@@ -11,8 +12,8 @@ import { useSummaryTrend } from '../../hooks'
  *
  * P5-4 adds the loading/error states: the wireframe's full-height bar skeleton
  * (docs/wireframes/loading.html — sk-bar, 220px) while the query is pending, and
- * a graceful error + Retry on failure. The Recharts bar/line chart that renders
- * this series lands in P6-3.
+ * a graceful error + Retry on failure. P6-3 wires the success branch to a real
+ * Recharts bar chart (TrendChart) from /summary/trend.
  */
 function TrendSection() {
   const { range } = useMonth()
@@ -27,9 +28,7 @@ function TrendSection() {
       ) : trend.isError ? (
         <ErrorState error={trend.error} onRetry={() => void trend.refetch()} />
       ) : (
-        <div className="flex h-[220px] items-center justify-center text-sm text-muted">
-          Spending trend chart (Phase 6)
-        </div>
+        <TrendChart data={trend.data} />
       )}
     </Card>
   )
