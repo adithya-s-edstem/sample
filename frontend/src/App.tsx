@@ -39,17 +39,22 @@ function App() {
   const closeDelete = () => setDeleting(null)
 
   return (
-    <main className="min-h-screen bg-bg text-ink">
-      <div className="mx-auto max-w-[1200px] px-8 pt-7 pb-14">
+    <div className="min-h-screen bg-bg text-ink">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <div className="mx-auto max-w-[1200px] px-4 pt-7 pb-14 sm:px-6 lg:px-8">
         <Header onAddExpense={openAdd} />
-        <SummaryRow />
-        <TrendSection />
-        <FilterBar />
-        <ExpenseListSection
-          onAddExpense={openAdd}
-          onEditExpense={openEdit}
-          onDeleteExpense={openDelete}
-        />
+        <main id="main-content">
+          <SummaryRow />
+          <TrendSection />
+          <FilterBar />
+          <ExpenseListSection
+            onAddExpense={openAdd}
+            onEditExpense={openEdit}
+            onDeleteExpense={openDelete}
+          />
+        </main>
       </div>
       {modal && (
         <ExpenseFormModal
@@ -58,7 +63,7 @@ function App() {
         />
       )}
       {deleting && <DeleteExpenseDialog expense={deleting} onClose={closeDelete} />}
-    </main>
+    </div>
   )
 }
 

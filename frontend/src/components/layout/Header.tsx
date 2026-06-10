@@ -19,9 +19,9 @@ function Header({ onAddExpense }: HeaderProps) {
     'inline-flex size-9 cursor-pointer items-center justify-center rounded-[10px] border border-line bg-card text-sm text-ink shadow-card'
 
   return (
-    <header className="mb-6 flex items-center justify-between">
+    <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-xl font-bold tracking-tight">Expense Tracker</h1>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
