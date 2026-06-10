@@ -54,7 +54,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P3-2** `GET /api/summary` — total + count for a period (defaults to current month) — Owner: Adithya
 - [x] **P3-3** `GET /api/summary/by-category` — per-category totals/percent (donut) — Owner: Adithya
 - [x] **P3-4** `GET /api/summary/trend` — time series with `granularity` (day/month) — Owner: Adithya
-- [ ] **P3-5** Aggregations via JPQL/native queries; verified for money precision
+- [x] **P3-5** Aggregations via JPQL/native queries; verified for money precision — Owner: Adithya
 - [ ] **P3-6** Integration tests for filtering, pagination, and each summary endpoint (empty month, single category, mixed)
 - [ ] **Exit:** all read/aggregation endpoints return correct, tested data
 
