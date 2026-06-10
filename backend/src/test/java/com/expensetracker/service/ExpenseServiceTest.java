@@ -10,7 +10,9 @@ import static org.mockito.Mockito.when;
 import com.expensetracker.domain.Category;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.repository.projection.CategorySummaryProjection;
 import com.expensetracker.repository.projection.SummaryProjection;
+import com.expensetracker.web.dto.CategorySummaryResponse;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
 import com.expensetracker.web.dto.SummaryQuery;
@@ -19,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -225,5 +228,93 @@ class ExpenseServiceTest {
         assertThat(response.total()).isEqualByComparingTo("0.00");
         assertThat(response.total().scale()).isEqualTo(2);
         assertThat(response.count()).isZero();
+    }
+
+    // --- summaryByCategory (GET /api/summary/by-category) ----------------------
+
+    private static CategorySummaryProjection categoryRow(Category category, BigDecimal total, long count) {
+        return new CategorySummaryProjection() {
+            @Override
+            public Category getCategory() {
+                return category;
+            }
+
+            @Override
+            public BigDecimal getTotal() {
+                return total;
+            }
+
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
+    }
+
+    @Test
+    void byCategoryComputesGrandTotalSlicesAndPercentsFromExactTotals() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeByCategory(from, to))
+                .thenReturn(List.of(
+                        categoryRow(Category.RENT, new BigDecimal("12000.00"), 1L),
+                        categoryRow(Category.GROCERIES, new BigDecimal("5200.00"), 8L),
+                        categoryRow(Category.FOOD, new BigDecimal("3300.00"), 12L)));
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(from, to));
+
+        assertThat(response.from()).isEqualTo(from);
+        assertThat(response.to()).isEqualTo(to);
+        assertThat(response.total()).isEqualByComparingTo("20500.00");
+        assertThat(response.categories()).hasSize(3);
+        // Percent share is each slice / grand total, half-up to 2 decimals.
+        assertThat(response.categories().get(0).category()).isEqualTo(Category.RENT);
+        assertThat(response.categories().get(0).total()).isEqualByComparingTo("12000.00");
+        assertThat(response.categories().get(0).count()).isEqualTo(1L);
+        assertThat(response.categories().get(0).percent()).isEqualByComparingTo("58.54");
+        assertThat(response.categories().get(1).percent()).isEqualByComparingTo("25.37");
+        assertThat(response.categories().get(2).percent()).isEqualByComparingTo("16.10");
+    }
+
+    @Test
+    void byCategoryDefaultsRangeToCurrentMonthWhenOmitted() {
+        YearMonth thisMonth = YearMonth.now();
+        LocalDate first = thisMonth.atDay(1);
+        LocalDate last = thisMonth.atEndOfMonth();
+        when(repository.summarizeByCategory(first, last))
+                .thenReturn(List.of(categoryRow(Category.FOOD, new BigDecimal("100.00"), 2L)));
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(null, null));
+
+        verify(repository).summarizeByCategory(first, last);
+        assertThat(response.from()).isEqualTo(first);
+        assertThat(response.to()).isEqualTo(last);
+    }
+
+    @Test
+    void byCategoryReportsZeroTotalAndEmptyListForEmptyPeriod() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeByCategory(from, to)).thenReturn(List.of());
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(from, to));
+
+        // No rows → grand total 0.00 (scale 2), no slices, and no divide-by-zero.
+        assertThat(response.total()).isEqualByComparingTo("0.00");
+        assertThat(response.total().scale()).isEqualTo(2);
+        assertThat(response.categories()).isEmpty();
+    }
+
+    @Test
+    void byCategorySingleCategoryGetsHundredPercent() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarizeByCategory(from, to))
+                .thenReturn(List.of(categoryRow(Category.RENT, new BigDecimal("12000.00"), 1L)));
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(from, to));
+
+        assertThat(response.categories()).hasSize(1);
+        assertThat(response.categories().get(0).percent()).isEqualByComparingTo("100.00");
     }
 }
