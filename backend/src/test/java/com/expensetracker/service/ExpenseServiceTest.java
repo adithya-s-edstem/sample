@@ -2,6 +2,7 @@ package com.expensetracker.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -307,6 +308,52 @@ class ExpenseServiceTest {
         assertThat(response.total()).isEqualByComparingTo("0.00");
         assertThat(response.total().scale()).isEqualTo(2);
         assertThat(response.categories()).isEmpty();
+    }
+
+    @Test
+    void byCategoryPercentsComputedFromExactTotalsSumToAboutOneHundred() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        // Three equal thirds (10.00 each of 30.00) — each rounds half-up to 33.33,
+        // so the shares sum to 99.99, not 100.00. testing-plan.md §6 documents that
+        // the percents are computed from the exact totals and sum to ~100% under the
+        // half-up rounding rule; this pins that behaviour.
+        when(repository.summarizeByCategory(from, to))
+                .thenReturn(List.of(
+                        categoryRow(Category.FOOD, new BigDecimal("10.00"), 1L),
+                        categoryRow(Category.RENT, new BigDecimal("10.00"), 1L),
+                        categoryRow(Category.OTHER, new BigDecimal("10.00"), 1L)));
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(from, to));
+
+        assertThat(response.total()).isEqualByComparingTo("30.00");
+        assertThat(response.categories())
+                .extracting(c -> c.percent().setScale(2))
+                .containsExactly(new BigDecimal("33.33"), new BigDecimal("33.33"), new BigDecimal("33.33"));
+
+        // Each percent is half-up to two decimals and within rounding tolerance of 100.
+        BigDecimal sumOfPercents = response.categories().stream()
+                .map(CategorySummaryResponse.CategoryShare::percent)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertThat(sumOfPercents).isEqualByComparingTo("99.99");
+        assertThat(sumOfPercents).isCloseTo(new BigDecimal("100.00"), within(new BigDecimal("0.05")));
+    }
+
+    @Test
+    void byCategoryGrandTotalSumsFractionalSlicesExactly() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        // Fractional per-category totals must reduce to an exact grand total at
+        // scale 2 — no float drift in the service-side reduction.
+        when(repository.summarizeByCategory(from, to))
+                .thenReturn(List.of(
+                        categoryRow(Category.FOOD, new BigDecimal("0.10"), 1L),
+                        categoryRow(Category.RENT, new BigDecimal("0.20"), 1L)));
+
+        CategorySummaryResponse response = service.summaryByCategory(new SummaryQuery(from, to));
+
+        assertThat(response.total()).isEqualByComparingTo("0.30");
+        assertThat(response.total().scale()).isEqualTo(2);
     }
 
     @Test
