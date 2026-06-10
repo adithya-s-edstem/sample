@@ -93,6 +93,11 @@ class ExpenseRepositoryIntegrationTest {
     void filtersByCategory() {
         assertThat(repository.findAll(ExpenseSpecifications.hasCategory(Category.FOOD)))
                 .containsExactlyInAnyOrder(may31Food100, jun15Food200);
+
+        // A single-row category pins the enum comparison/storage too — a 2-row
+        // FOOD result alone could mask a mismatch on a less-common value.
+        assertThat(repository.findAll(ExpenseSpecifications.hasCategory(Category.GROCERIES)))
+                .containsExactly(jun01Groceries50);
     }
 
     @Test
@@ -140,7 +145,9 @@ class ExpenseRepositoryIntegrationTest {
                 ExpenseSpecifications.minAmount(null),
                 ExpenseSpecifications.maxAmount(null));
 
-        assertThat(repository.findAll(noFilters)).hasSize(5);
+        assertThat(repository.findAll(noFilters))
+                .containsExactlyInAnyOrder(
+                        may31Food100, jun01Groceries50, jun15Food200, jun30Transport001, jul01Rent1500);
     }
 
     @Test
@@ -158,6 +165,16 @@ class ExpenseRepositoryIntegrationTest {
 
         assertThat(result)
                 .containsExactly(jul01Rent1500, jun30Transport001, jun15Food200, jun01Groceries50, may31Food100);
+    }
+
+    @Test
+    void sortsWithinFilteredResults() {
+        // findAll(Specification, Sort) builds a WHERE + ORDER BY together; this
+        // catches a regression where the sort is dropped once a filter is present.
+        List<Expense> result = repository.findAll(
+                ExpenseSpecifications.hasCategory(Category.FOOD), Sort.by(Sort.Direction.DESC, "amount"));
+
+        assertThat(result).containsExactly(jun15Food200, may31Food100);
     }
 
     @Test
