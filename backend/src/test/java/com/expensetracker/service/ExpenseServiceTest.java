@@ -111,6 +111,8 @@ class ExpenseServiceTest {
         verify(repository).save(saved.capture());
         assertThat(saved.getValue().getId()).isEqualTo(id);
         assertThat(saved.getValue().getAmount()).isEqualByComparingTo("250.50");
+        assertThat(saved.getValue().getDate()).isEqualTo(LocalDate.of(2026, 6, 2));
+        assertThat(saved.getValue().getCategory()).isEqualTo(Category.HEALTH);
         assertThat(response.id()).isEqualTo(id);
         assertThat(response.amount()).isEqualByComparingTo("250.50");
         assertThat(response.date()).isEqualTo(LocalDate.of(2026, 6, 2));
@@ -130,19 +132,20 @@ class ExpenseServiceTest {
     @Test
     void deleteRemovesWhenExists() {
         UUID id = UUID.randomUUID();
-        when(repository.existsById(id)).thenReturn(true);
+        Expense existing = persisted(id, new BigDecimal("75.00"), LocalDate.of(2026, 6, 5), Category.SHOPPING);
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
 
         service.delete(id);
 
-        verify(repository).deleteById(id);
+        verify(repository).delete(existing);
     }
 
     @Test
     void deleteThrowsAndDoesNotDeleteWhenMissing() {
         UUID id = UUID.randomUUID();
-        when(repository.existsById(id)).thenReturn(false);
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.delete(id)).isInstanceOf(ExpenseNotFoundException.class);
-        verify(repository, never()).deleteById(any());
+        verify(repository, never()).delete(any(Expense.class));
     }
 }

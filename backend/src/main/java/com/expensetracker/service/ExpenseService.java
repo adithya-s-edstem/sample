@@ -50,10 +50,7 @@ public class ExpenseService {
 
     /** Deletes an existing expense; throws if the id is unknown. */
     public void delete(UUID id) {
-        if (!repository.existsById(id)) {
-            throw new ExpenseNotFoundException(id);
-        }
-        repository.deleteById(id);
+        repository.delete(findOrThrow(id));
     }
 
     private Expense findOrThrow(UUID id) {
