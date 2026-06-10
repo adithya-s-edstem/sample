@@ -51,7 +51,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 3 — List, Filter, Pagination & Summaries
 
 - [x] **P3-1** `GET /api/expenses` with `from`, `to`, `category`, `minAmount`, `maxAmount`, `sort`, `page`, `size`; paginated response (defaults to current month) — Owner: Adithya
-- [ ] **P3-2** `GET /api/summary` — total + count for a period (defaults to current month)
+- [x] **P3-2** `GET /api/summary` — total + count for a period (defaults to current month) — Owner: Adithya
 - [ ] **P3-3** `GET /api/summary/by-category` — per-category totals/percent (donut)
 - [ ] **P3-4** `GET /api/summary/trend` — time series with `granularity` (day/month)
 - [ ] **P3-5** Aggregations via JPQL/native queries; verified for money precision
@@ -120,7 +120,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [ ] **P9-4** Playwright E2E for key flows: add → dashboard updates; edit; delete + confirm; filter & search; month navigation + empty state; export CSV; loading/error + retry
 - [ ] **P9-5** Money/decimal precision suite (explicit): storage round-trip, aggregation/percentages, `0.01` accepted / `0` & negative rejected, CSV 2-decimal, FE display
 - [ ] **P9-6** CI gates green: backend `mvnw verify` (unit + integration + JaCoCo); frontend `vitest run --coverage` + lint; Playwright suite
-- [ ] **P9-7** Update docs/README; finalize Docker Compose for full local run
+- [ ] **P9-7** Update docs/README; finalize Docker Compose for full local run. While updating README, mention the fact that this was all done with subagents using a single prompt from prompt.md on top.
 - [ ] **Exit:** v1 feature-complete, tested, runnable locally via documented steps
 
 ---

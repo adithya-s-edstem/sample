@@ -10,11 +10,15 @@ import static org.mockito.Mockito.when;
 import com.expensetracker.domain.Category;
 import com.expensetracker.domain.Expense;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.repository.projection.SummaryProjection;
 import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
+import com.expensetracker.web.dto.SummaryQuery;
+import com.expensetracker.web.dto.SummaryResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -161,5 +165,65 @@ class ExpenseServiceTest {
 
         assertThatThrownBy(() -> service.delete(id)).isInstanceOf(ExpenseNotFoundException.class);
         verify(repository, never()).delete(any(Expense.class));
+    }
+
+    // --- summary (GET /api/summary) -------------------------------------------
+
+    private static SummaryProjection projection(BigDecimal total, long count) {
+        return new SummaryProjection() {
+            @Override
+            public BigDecimal getTotal() {
+                return total;
+            }
+
+            @Override
+            public long getCount() {
+                return count;
+            }
+        };
+    }
+
+    @Test
+    void summaryAggregatesTotalCountAndEchoesExplicitRange() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        when(repository.summarize(from, to)).thenReturn(projection(new BigDecimal("24500.00"), 42L));
+
+        SummaryResponse response = service.summary(new SummaryQuery(from, to));
+
+        assertThat(response.from()).isEqualTo(from);
+        assertThat(response.to()).isEqualTo(to);
+        assertThat(response.total()).isEqualByComparingTo("24500.00");
+        assertThat(response.count()).isEqualTo(42L);
+        assertThat(response.currency()).isEqualTo("INR");
+    }
+
+    @Test
+    void summaryDefaultsRangeToCurrentMonthWhenOmitted() {
+        YearMonth thisMonth = YearMonth.now();
+        LocalDate first = thisMonth.atDay(1);
+        LocalDate last = thisMonth.atEndOfMonth();
+        when(repository.summarize(first, last)).thenReturn(projection(new BigDecimal("100.00"), 3L));
+
+        SummaryResponse response = service.summary(new SummaryQuery(null, null));
+
+        // The current-month bounds are passed to the repository and echoed back.
+        verify(repository).summarize(first, last);
+        assertThat(response.from()).isEqualTo(first);
+        assertThat(response.to()).isEqualTo(last);
+    }
+
+    @Test
+    void summaryReportsZeroTotalWithTwoDecimalScaleForEmptyPeriod() {
+        LocalDate from = LocalDate.of(2026, 6, 1);
+        LocalDate to = LocalDate.of(2026, 6, 30);
+        // The query coalesces SUM(null) to 0; the service normalizes it to scale 2.
+        when(repository.summarize(from, to)).thenReturn(projection(BigDecimal.ZERO, 0L));
+
+        SummaryResponse response = service.summary(new SummaryQuery(from, to));
+
+        assertThat(response.total()).isEqualByComparingTo("0.00");
+        assertThat(response.total().scale()).isEqualTo(2);
+        assertThat(response.count()).isZero();
     }
 }
