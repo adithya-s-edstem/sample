@@ -156,4 +156,16 @@ describe('ExpenseModal (P7-2)', () => {
     expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
   })
+
+  it('shows a server-side error banner when provided (P7-3)', () => {
+    render(
+      <ExpenseModal
+        onSubmit={vi.fn()}
+        onClose={vi.fn()}
+        serverError="amount must be greater than 0"
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('amount must be greater than 0')
+  })
 })
