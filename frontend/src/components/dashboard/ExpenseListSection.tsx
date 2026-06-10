@@ -1,6 +1,7 @@
 import Card from '../layout/Card'
 import Skeleton from '../layout/Skeleton'
 import ErrorState from '../layout/ErrorState'
+import EmptyState from './EmptyState'
 import { useMonth } from '../../context/monthContext'
 import { useExpenses } from '../../hooks'
 
@@ -11,13 +12,27 @@ import { useExpenses } from '../../hooks'
  *
  * P5-4 adds the loading/error states: while the query is pending, the table body
  * shows the wireframe's row skeletons (docs/wireframes/loading.html — five
- * sk-row blocks); on failure the body shows a graceful error + Retry. Rows,
- * actions, and the empty state are rendered from this data in Phase 7 (P7-1);
- * CSV export hooks up in P8-3.
+ * sk-row blocks); on failure the body shows a graceful error + Retry.
+ *
+ * P6-4 adds the empty state: when the query succeeds but the selected month has
+ * no expenses, the whole card becomes the friendly "No expenses this month"
+ * prompt with an "Add your first expense" CTA (docs/wireframes/empty.html) — the
+ * table header and Export action are hidden since there is nothing to list or
+ * export. Rows and actions are rendered from this data in Phase 7 (P7-1); CSV
+ * export hooks up in P8-3.
  */
 function ExpenseListSection() {
   const { range } = useMonth()
   const expenses = useExpenses(range)
+
+  // Successful fetch with no rows for the month → page-level empty prompt.
+  if (expenses.isSuccess && expenses.data.content.length === 0) {
+    return (
+      <Card>
+        <EmptyState />
+      </Card>
+    )
+  }
 
   return (
     <Card>
