@@ -17,7 +17,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P0-3** Scaffold backend via Spring Initializr: Web, Data JPA, Validation, PostgreSQL driver, Flyway, Testcontainers (Java 21, Spring Boot 3.x)
 - [x] **P0-4** Configure `application.yml` (datasource, JPA, Flyway) with env-var overrides
 - [x] **P0-5** Scaffold frontend via Vite (React + TS); add Tailwind, Recharts, TanStack Query, axios, date-fns
-- [ ] **P0-6** Configure Vite dev proxy `/api` → backend; configure backend CORS for dev origin
+- [x] **P0-6** Configure Vite dev proxy `/api` → backend; configure backend CORS for dev origin
 - [ ] **P0-7** Tooling: ESLint + Prettier (frontend); Spotless/Checkstyle optional (backend)
 - [ ] **P0-8** Basic CI (build + test both apps); README with run instructions
 - [ ] **Exit:** `docker compose up` + `mvnw spring-boot:run` + `npm run dev` all start; `/api/health` returns OK and the SPA loads
