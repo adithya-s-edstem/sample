@@ -1,0 +1,48 @@
+# Expense Tracker — backend configuration.
+#
+# Every connection setting has a sensible local default (matching the repo-root
+# docker-compose.yml) and an env-var override, so the same build runs locally,
+# in Docker, and in CI without edits. Override via DB_HOST / DB_PORT / DB_NAME /
+# DB_USER / DB_PASSWORD (see ../../../.env.example), or the standard
+# SPRING_DATASOURCE_* vars.
+spring:
+  application:
+    name: expense-tracker
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:expense-tracker}
+    username: ${DB_USER:expense}
+    password: ${DB_PASSWORD:expense}
+
+  jpa:
+    # Flyway owns the schema; Hibernate must never mutate it — only validate that
+    # entities match the migrated tables.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        # Store/read timestamps in UTC (ISO-8601 UTC is the API convention).
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  # JSON: ISO-8601, UTC, never numeric timestamps (X-3 convention).
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Trim default banner noise; quiet SQL logging unless explicitly raised.
+logging:
+  level:
+    org.flywaydb: INFO
+    org.hibernate.SQL: WARN
