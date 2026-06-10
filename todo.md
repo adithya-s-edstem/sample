@@ -72,7 +72,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 ## Phase 5 — Frontend Foundation
 
 - [x] **P5-1** App shell, layout, Tailwind theme matching wireframes (clean/minimal) — Owner: Adithya
-- [ ] **P5-2** Typed API client (`Expense`, request/response types) + TanStack Query hooks (`useExpenses`, `useSummary`, etc.)
+- [x] **P5-2** Typed API client (`Expense`, request/response types) + TanStack Query hooks (`useExpenses`, `useSummary`, etc.) — Owner: Adithya
 - [ ] **P5-3** Month selector state (defaults to current month) feeding all queries
 - [ ] **P5-4** Loading skeletons + error states (per `docs/wireframes/loading.html`)
 - [ ] **P5-5** Hook tests with MSW (loading/success/error, cache invalidation on mutation)
