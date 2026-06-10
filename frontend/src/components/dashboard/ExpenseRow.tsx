@@ -12,9 +12,9 @@ import { expenseDateLabel } from '../../lib/month'
  *
  * Money is display-only: `amount` is the exact two-decimal wire value
  * (server-side BigDecimal / NUMERIC(12,2)); we only format it here. The edit and
- * delete actions surface as accessible buttons and invoke optional callbacks —
- * the modal/create/update (P7-2/P7-3) and confirm-delete (P7-4) wiring lands in
- * later tasks, so absent a handler the buttons are inert.
+ * delete actions surface as accessible buttons and invoke optional callbacks:
+ * `onEdit` opens the add/edit modal (P7-3) and `onDelete` opens the confirm
+ * prompt (P7-4). Absent a handler the corresponding button is inert.
  */
 type ExpenseRowProps = {
   expense: Expense

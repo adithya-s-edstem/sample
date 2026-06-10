@@ -25,16 +25,23 @@ import type { Expense } from '../../api/types'
  * P7-1 renders the real rows from the page content: each expense becomes an
  * ExpenseRow (date, category pill, amount, edit/delete actions). P7-3 wires the
  * edit action and the empty-state CTA to the add/edit modal via `onEditExpense` /
- * `onAddExpense` (state lives in App); delete (P7-4) and CSV export (P8-3) follow.
+ * `onAddExpense` (state lives in App); P7-4 wires each row's delete action to the
+ * confirm prompt via `onDeleteExpense`. CSV export (P8-3) follows.
  */
 type ExpenseListSectionProps = {
   /** Opens the add-expense modal (header / empty-state CTA share this). */
   onAddExpense?: () => void
   /** Opens the edit modal pre-filled from the given expense. */
   onEditExpense?: (expense: Expense) => void
+  /** Opens the delete confirm prompt for the given expense. */
+  onDeleteExpense?: (expense: Expense) => void
 }
 
-function ExpenseListSection({ onAddExpense, onEditExpense }: ExpenseListSectionProps) {
+function ExpenseListSection({
+  onAddExpense,
+  onEditExpense,
+  onDeleteExpense,
+}: ExpenseListSectionProps) {
   const { range } = useMonth()
   const expenses = useExpenses(range)
 
@@ -97,7 +104,12 @@ function ExpenseListSection({ onAddExpense, onEditExpense }: ExpenseListSectionP
             </tr>
           ) : (
             expenses.data.content.map((expense) => (
-              <ExpenseRow key={expense.id} expense={expense} onEdit={onEditExpense} />
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                onEdit={onEditExpense}
+                onDelete={onDeleteExpense}
+              />
             ))
           )}
         </tbody>
