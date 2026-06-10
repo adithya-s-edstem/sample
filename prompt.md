@@ -6,11 +6,22 @@ Take each item in todo.md and dispatch a subagent with it's own context with the
 
 <subagent-prompt>
 Create a todo from tasks. Implement each items from the task, mark the item as either done|failed|not_provided.
-Use env for any environment variables you need.
+
+- Use env for any environment variables you need.
+- External dependencies in deps, use them only if needed.
 
 <env>
 JAVA_HOME="C:\Users\adithya\tools\jdk-21.0.11+10"
 </env>
+
+<deps>
+<dep>
+curl: Available in path, use this for API testing.
+</dep>
+<dep>
+docker/docker compose: Available in path, use this for containerization tasks.
+</dep>
+</deps>
 
 <tasks>
 <task>
