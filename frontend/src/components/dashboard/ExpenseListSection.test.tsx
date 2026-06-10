@@ -52,6 +52,44 @@ describe('ExpenseListSection — empty state (P6-4)', () => {
     expect(screen.queryByText('No expenses this month')).not.toBeInTheDocument()
   })
 
+  it('renders a row per expense in the page content (P7-1)', async () => {
+    const page: PageResponse<Expense> = {
+      ...sampleExpensePage,
+      content: [
+        {
+          id: 'a',
+          amount: 1200,
+          date: '2026-06-10',
+          category: 'GROCERIES',
+          createdAt: '2026-06-10T09:30:00Z',
+          updatedAt: '2026-06-10T09:30:00Z',
+        },
+        {
+          id: 'b',
+          amount: 300,
+          date: '2026-06-09',
+          category: 'TRANSPORT',
+          createdAt: '2026-06-09T09:30:00Z',
+          updatedAt: '2026-06-09T09:30:00Z',
+        },
+      ],
+      totalElements: 2,
+      totalPages: 1,
+    }
+    server.use(http.get('/api/expenses', () => HttpResponse.json(page)))
+
+    renderWithProviders(<ExpenseListSection />, { initialMonth: JUNE_2026 })
+
+    await waitFor(() => expect(screen.getByText('10 Jun 2026')).toBeInTheDocument())
+    expect(screen.getByText('Groceries')).toBeInTheDocument()
+    expect(screen.getByText('₹1,200.00')).toBeInTheDocument()
+    expect(screen.getByText('9 Jun 2026')).toBeInTheDocument()
+    expect(screen.getByText('Transport')).toBeInTheDocument()
+    expect(screen.getByText('₹300.00')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^Edit expense/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /^Delete expense/ })).toHaveLength(2)
+  })
+
   it('shows the row skeletons while /api/expenses is pending', () => {
     server.use(
       http.get('/api/expenses', async () => {
