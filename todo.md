@@ -40,7 +40,7 @@ member. Add an **Owner** column note next to any task as you delegate.
 - [x] **P2-1** DTOs: `ExpenseRequest`, `ExpenseResponse` + entity↔DTO mapping — Owner: Adithya
 - [x] **P2-2** `ExpenseService` — create/read/update/delete business logic — Owner: Adithya
 - [x] **P2-3** `ExpenseController` — `POST /api/expenses`, `GET /api/expenses/{id}`, `PUT /api/expenses/{id}`, `DELETE /api/expenses/{id}` — Owner: Adithya
-- [ ] **P2-4** Bean Validation (amount > 0, required date/category) + global exception handler with uniform error shape (`timestamp, status, error, message, path, fieldErrors[]`)
+- [x] **P2-4** Bean Validation (amount > 0, required date/category) + global exception handler with uniform error shape (`timestamp, status, error, message, path, fieldErrors[]`) — Owner: Adithya
 - [ ] **P2-5** `GET /api/categories` reference endpoint (returns fixed enum set)
 - [ ] **P2-6** Web-layer tests (`@WebMvcTest`) + service unit tests (Mockito)
 - [ ] **P2-7** Contract tests (MockMvc) against `docs/api-contracts.md`: status codes, body shapes, validation/error JSON
