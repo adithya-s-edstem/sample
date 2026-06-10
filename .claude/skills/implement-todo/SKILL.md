@@ -131,7 +131,37 @@ prefer new commits. Don't add co-author/attribution lines unless the user asks.
 git push -u origin todo-p2-3
 ```
 
-## Step 9 — Open a PR
+## Step 9 — Update CLAUDE.md if this task changed something it documents
+
+Before raising the PR, check whether this task changed anything `CLAUDE.md` describes — and
+update it **only if relevant**. CLAUDE.md is the entry point future instances read first, so it
+must stay accurate, but don't churn it for changes it doesn't cover.
+
+Update it when the task, for example:
+
+- moves the build progress forward (a phase/area is now built that CLAUDE.md still calls
+  unbuilt, or "not yet built" no longer holds);
+- adds or changes a **command** (build/run/test/format, a new script or Maven goal);
+- introduces a new **package/layer, module, or significant file** that changes the documented
+  structure;
+- changes a **convention or architectural decision** already captured there (and, per the
+  guardrails, the underlying doc too).
+
+Do **not** touch CLAUDE.md for routine within-the-lines work (a new test, an internal method,
+a bugfix) that none of its sections describe.
+
+If you edit it, keep the change tight and factual, then commit and push it onto the work branch
+so it lands in this PR:
+
+```
+git add CLAUDE.md
+git commit -m "<task id>: update CLAUDE.md for <what changed>"
+git push
+```
+
+If nothing relevant changed, say so explicitly and move on — no edit, no empty commit.
+
+## Step 10 — Open a PR
 
 Use `gh pr create`. Base = `main`, head = the work branch. Title: `<task id>: <short summary>`.
 Body should include:
@@ -150,7 +180,7 @@ gh pr create --base main --head todo-p2-3 --title "P2-3: ExpenseController CRUD 
 
 Return the PR URL to the user.
 
-## Step 10 — Offer to check off the task
+## Step 11 — Offer to check off the task
 
 Ask whether to tick the task's checkbox in `todo.md` (`- [ ]` → `- [x]`) and note the Owner.
 Only do this if the user confirms; commit it as part of the PR branch if so.

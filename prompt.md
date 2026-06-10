@@ -6,6 +6,7 @@ Take each item in todo.md and dispatch a subagent with it's own context with the
 
 <subagent-prompt>
 Create a todo from tasks. Implement each items from the task, mark the item as done.
+Use env for any environment variables you need.
 
 <env>
 JAVA_HOME="C:\Users\adithya\tools\jdk-21.0.11+10"
@@ -19,7 +20,7 @@ implementation: /implement-todo for the todo number following the rules.
 exit_check: If an exit check is provided, investigate, mark it as complete if the checks pass.
 </task>
 <task>
-Once the PR is raised follow pr-steps.
+pr: Once the PR is raised follow pr-steps.
 </task>
 </tasks>
 
@@ -38,11 +39,15 @@ don't ask me for anything.
 </rules>
 
 <return>
-Once the task is completed, the agent should return the following json
-<code>
-{implementation: "done|failed", exit_check: "done|failed"}
-</code>
+Once the task is completed, the agent should only return the following json
+```json
+{
+  implementation: "done|failed",
+  exit_check: "done|failed|not_provided",
+  pr: "done|failed"
+}
+```
 </return>
 </subagent-prompt>
 
-Only take the next item after the agent returns {implementation: "done", exit_check: "done"}. If it returns either implementation or exit_check as failed, stop.
+Only take the next item after the agent returns {implementation: "done", exit_check: "done|not_provided", pr: "done"}. If it returns either implementation, pr or exit_check as failed, stop.
