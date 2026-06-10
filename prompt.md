@@ -17,7 +17,7 @@ JAVA_HOME="C:\Users\adithya\tools\jdk-21.0.11+10"
 implementation: /implement-todo for the todo number following the rules.
 </task>
 <task>
-exit_check: If an exit check is provided, investigate, mark it as complete if the checks pass.
+exit_check: If an exit check is provided, investigate, mark it as complete if the checks pass and include with the PR.
 </task>
 <task>
 pr: Once the PR is raised follow pr-steps.
