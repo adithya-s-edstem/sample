@@ -8,9 +8,11 @@ import com.expensetracker.web.dto.ExpenseRequest;
 import com.expensetracker.web.dto.ExpenseResponse;
 import com.expensetracker.web.dto.PageResponse;
 import jakarta.validation.Valid;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * CRUD endpoints for expenses, matching {@code docs/api-contracts.md}:
@@ -82,20 +85,24 @@ public class ExpenseController {
     }
 
     /**
-     * CSV export ({@code GET /api/expenses/export}, P4-1). Accepts the <b>same
-     * filter params as the list</b> ({@code from}, {@code to}, {@code category},
-     * {@code minAmount}, {@code maxAmount}, {@code q}) with the same current-month
-     * defaulting and {@code date,desc} default ordering, but <b>no pagination</b> —
-     * it exports every match.
+     * Streaming CSV export ({@code GET /api/expenses/export}, P4-1/P4-2). Accepts
+     * the <b>same filter params as the list</b> ({@code from}, {@code to}, {@code
+     * category}, {@code minAmount}, {@code maxAmount}, {@code q}) with the same
+     * current-month defaulting and {@code date,desc} default ordering, but <b>no
+     * pagination</b> — it exports every match.
      *
-     * <p>Responds {@code 200} with {@code Content-Type: text/csv} and a {@code
-     * Content-Disposition: attachment} filename of {@code expenses-YYYY-MM-DD.csv}
-     * (today's date). Body is {@code id,date,category,amount}, amounts at two
-     * decimals (see {@link ExpenseCsvWriter}). A malformed param surfaces as a
-     * uniform 400 via the global handler, exactly as on the list endpoint.
+     * <p>Responds {@code 200} with {@code Content-Type: text/csv; charset=UTF-8} and
+     * a {@code Content-Disposition: attachment} filename of {@code
+     * expenses-YYYY-MM-DD.csv} (today's date). The body is streamed via a
+     * {@link StreamingResponseBody}: the service pulls matching rows from a
+     * cursor-backed repository stream and {@link ExpenseCsvWriter} writes each
+     * {@code id,date,category,amount} record (amounts at two decimals) straight to
+     * the servlet output, so the full result set is never buffered in memory. A
+     * malformed param is detected during binding and surfaces as a uniform 400 via
+     * the global handler before streaming begins, exactly as on the list endpoint.
      */
     @GetMapping(value = "/export", produces = "text/csv")
-    public ResponseEntity<String> export(
+    public ResponseEntity<StreamingResponseBody> export(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) Category category,
@@ -104,14 +111,18 @@ public class ExpenseController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String sort) {
         // Export reuses the list query but never paginates, so page/size are unset.
-        List<ExpenseResponse> rows =
-                service.export(new ExpenseQuery(from, to, category, minAmount, maxAmount, q, sort, null, null));
-        String csv = ExpenseCsvWriter.write(rows);
+        ExpenseQuery query = new ExpenseQuery(from, to, category, minAmount, maxAmount, q, sort, null, null);
         String filename = "expenses-" + LocalDate.now() + ".csv";
+
+        StreamingResponseBody body = outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+            service.exportCsv(query, writer);
+        };
+
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .contentType(new MediaType(MediaType.parseMediaType("text/csv"), StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .body(csv);
+                .body(body);
     }
 
     @GetMapping("/{id}")
